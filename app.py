@@ -3,6 +3,7 @@ import sqlite3
 import threading
 import time
 from datetime import datetime
+import pytz
 import os
 import requests
 
@@ -10,6 +11,7 @@ TOKEN = os.getenv("TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
 app = Flask(__name__)
+FUSO = pytz.timezone("America/Sao_Paulo")
 
 def init_db():
     conn = sqlite3.connect("/tmp/database.db")
@@ -27,7 +29,8 @@ init_db()
 
 def enviar_telegram(texto):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": CHAT_ID, "text": texto})
+    resultado = requests.post(url, data={"chat_id": CHAT_ID, "text": texto})
+    print(f"Telegram respondeu: {resultado.status_code} - {resultado.text}")
 
 @app.route("/", methods=["GET", "POST"])
 def painel():
@@ -39,6 +42,7 @@ def painel():
         c.execute("INSERT INTO sinais (jogo, horario) VALUES (?, ?)", (jogo, horario))
         conn.commit()
         conn.close()
+        print(f"Sinal salvo: {jogo} às {horario}")
 
     conn = sqlite3.connect("/tmp/database.db")
     c = conn.cursor()
@@ -46,8 +50,11 @@ def painel():
     sinais = c.fetchall()
     conn.close()
 
+    agora = datetime.now(FUSO).strftime("%H:%M")
+
     html = """
     <h2>Painel de Sinais 🎰</h2>
+    <p>Horário atual Brasil: <b>{{ agora }}</b></p>
     <form method="post">
         Jogo: <input name="jogo"><br><br>
         Horário (HH:MM): <input name="horario"><br><br>
@@ -58,11 +65,12 @@ def painel():
         <p>{{s[1]}} - {{s[2]}}</p>
     {% endfor %}
     """
-    return render_template_string(html, sinais=sinais)
+    return render_template_string(html, sinais=sinais, agora=agora)
 
 def enviar_sinais():
     while True:
-        agora = datetime.now().strftime("%H:%M")
+        agora = datetime.now(FUSO).strftime("%H:%M")
+        print(f"Verificando sinais... horário Brasil: {agora}")
         conn = sqlite3.connect("/tmp/database.db")
         c = conn.cursor()
         c.execute("SELECT * FROM sinais WHERE horario=? AND enviado=0", (agora,))
@@ -80,6 +88,7 @@ def enviar_sinais():
 🔥 ENTRE COM GERENCIAMENTO!"""
             enviar_telegram(mensagem)
             c.execute("UPDATE sinais SET enviado=1 WHERE id=?", (s[0],))
+            print(f"Sinal enviado: {s[1]} às {s[2]}")
         conn.commit()
         conn.close()
         time.sleep(20)
