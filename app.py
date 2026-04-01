@@ -435,6 +435,7 @@ def horarios_hoje():
 def preview_mensagem(nome_jogo):
     return gerar_mensagem(nome_jogo)
 
+
 # =========================
 # HTML LOGIN
 # =========================
@@ -448,7 +449,7 @@ LOGIN_HTML = """
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
+            background: linear-gradient(135deg, #0b0b0f, #1a0f12);
             color: #fff;
             min-height: 100vh;
             display: flex;
@@ -459,21 +460,21 @@ LOGIN_HTML = """
         .box {
             width: 100%;
             max-width: 420px;
-            background: #16213e;
-            border: 1px solid #f5c542;
+            background: #15151c;
+            border: 1px solid #d4af37;
             border-radius: 16px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,.35);
+            box-shadow: 0 10px 40px rgba(0,0,0,.45);
         }
         h1 { color: #f5c542; text-align: center; margin-bottom: 8px; }
-        p { color: #aaa; text-align: center; margin-bottom: 20px; }
+        p { color: #c9c9c9; text-align: center; margin-bottom: 20px; }
         input {
             width: 100%;
             padding: 12px;
             margin-bottom: 12px;
             border-radius: 8px;
-            border: 1px solid #f5c542;
-            background: #0f3460;
+            border: 1px solid #d4af37;
+            background: #0b0b0f;
             color: #fff;
         }
         button {
@@ -481,16 +482,19 @@ LOGIN_HTML = """
             padding: 12px;
             border: none;
             border-radius: 8px;
-            background: #f5c542;
-            color: #000;
+            background: linear-gradient(90deg, #c1121f, #e5383b);
+            color: #fff;
             font-weight: bold;
             cursor: pointer;
         }
+        button:hover {
+            filter: brightness(1.08);
+        }
         .msg {
             margin-bottom: 12px;
-            background: #3d1f25;
-            color: #ffb4b4;
-            border-left: 4px solid #ff4d4d;
+            background: #2a1114;
+            color: #ffd6d6;
+            border-left: 4px solid #e5383b;
             border-radius: 8px;
             padding: 10px;
             font-size: 14px;
@@ -550,81 +554,266 @@ HTML = """
     <title>Painel Rainha Games</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #fff; padding: 20px; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(180deg, #0b0b0f, #14090b);
+            color: #fff;
+            padding: 20px;
+        }
+
         a { text-decoration: none; }
-        h1 { color: #f5c542; text-align: center; font-size: 28px; margin-bottom: 6px; }
-        .sub { text-align: center; color: #aaa; margin-bottom: 16px; }
+
+        h1 {
+            color: #f5c542;
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .sub {
+            text-align: center;
+            color: #c9c9c9;
+            margin-bottom: 16px;
+        }
+
         .topbar {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 18px; gap: 10px; flex-wrap: wrap;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
+
         .hora-box {
-            background: #f5c542; color: #000; padding: 10px 14px;
-            border-radius: 10px; font-weight: bold;
+            background: linear-gradient(90deg, #d4af37, #f5c542);
+            color: #000;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: bold;
         }
+
         .logout {
-            background: #e8384f; color: #fff; padding: 10px 14px;
-            border-radius: 10px; font-weight: bold;
+            background: linear-gradient(90deg, #c1121f, #e5383b);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: bold;
         }
+
         .stats {
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
         }
-        @media(max-width:900px){ .stats { grid-template-columns: repeat(2, 1fr); } }
-        @media(max-width:600px){ .stats { grid-template-columns: 1fr; } }
+
+        @media(max-width:900px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media(max-width:600px) {
+            .stats { grid-template-columns: 1fr; }
+        }
+
         .stat {
-            background: #16213e; border: 1px solid #f5c542;
-            border-radius: 12px; padding: 16px; text-align: center;
+            background: #15151c;
+            border: 1px solid #d4af37;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 6px 18px rgba(0,0,0,.25);
         }
-        .stat .n { font-size: 28px; color: #f5c542; font-weight: bold; }
-        .stat .l { font-size: 13px; color: #bbb; margin-top: 4px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media(max-width:900px){ .grid { grid-template-columns: 1fr; } }
+
+        .stat .n {
+            font-size: 28px;
+            color: #f5c542;
+            font-weight: bold;
+        }
+
+        .stat .l {
+            font-size: 13px;
+            color: #c9c9c9;
+            margin-top: 4px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media(max-width:900px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
         .card {
-            background: #16213e; border: 1px solid #f5c542;
-            border-radius: 12px; padding: 20px; margin-bottom: 20px;
+            background: #15151c;
+            border: 1px solid #d4af37;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 18px rgba(0,0,0,.25);
         }
-        .card h2 { color: #f5c542; margin-bottom: 15px; font-size: 18px; }
-        label { display: block; color: #ccc; margin-bottom: 5px; font-size: 14px; }
+
+        .card h2 {
+            color: #f5c542;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        label {
+            display: block;
+            color: #c9c9c9;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
         input, select {
-            width: 100%; padding: 10px; background: #0f3460; color: #fff;
-            border: 1px solid #f5c542; border-radius: 8px; margin-bottom: 12px; font-size: 14px;
+            width: 100%;
+            padding: 10px;
+            background: #0b0b0f;
+            color: #fff;
+            border: 1px solid #c1121f;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
         }
-        select option { background: #0f3460; }
+
+        select option {
+            background: #15151c;
+            color: #fff;
+        }
+
         .btn {
-            background: #f5c542; color: #000; padding: 10px 12px; border: none;
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;
+            background: linear-gradient(90deg, #d4af37, #f5c542);
+            color: #000;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
             display: inline-block;
         }
-        .btn:hover { background: #e5b532; }
-        .btn-red { background: #e8384f; color: #fff; }
-        .btn-blue { background: #4da3ff; color: #fff; }
-        .btn-green { background: #1fb86a; color: #fff; }
-        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th { background: #f5c542; color: #000; padding: 8px; text-align: left; }
-        td { padding: 8px; border-bottom: 1px solid #333; vertical-align: top; }
-        tr:hover { background: #0f3460; }
-        .tags { background: #0f3460; border-radius: 8px; padding: 12px; margin-top: 15px; }
+
+        .btn:hover {
+            filter: brightness(1.06);
+        }
+
+        .btn-red {
+            background: linear-gradient(90deg, #c1121f, #e5383b);
+            color: #fff;
+        }
+
+        .btn-blue {
+            background: #8b1e2d;
+            color: #fff;
+        }
+
+        .btn-green {
+            background: #b8860b;
+            color: #fff;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        th {
+            background: linear-gradient(90deg, #d4af37, #f5c542);
+            color: #000;
+            padding: 8px;
+            text-align: left;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #2b2b33;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: #1d1115;
+        }
+
+        .tags {
+            background: #0f0f14;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 1px solid #3a2023;
+        }
+
         .tags span {
-            background: #f5c542; color: #000; padding: 4px 10px; border-radius: 20px;
-            margin: 3px; display: inline-block; font-weight: bold; font-size: 13px;
+            background: linear-gradient(90deg, #c1121f, #e5383b);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin: 3px;
+            display: inline-block;
+            font-weight: bold;
+            font-size: 13px;
         }
-        .secao { margin-top: 20px; }
-        .del { color: #ff7d8e; font-weight: bold; }
+
+        .secao {
+            margin-top: 20px;
+        }
+
+        .del {
+            color: #ff8a8a;
+            font-weight: bold;
+        }
+
         .dica {
-            background: #0f3460; border-left: 3px solid #f5c542;
-            border-radius: 6px; padding: 10px; margin-top: 10px; color: #ccc; font-size: 13px;
+            background: #120d10;
+            border-left: 3px solid #d4af37;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            color: #c9c9c9;
+            font-size: 13px;
         }
+
         .flash {
-            margin-bottom: 15px; padding: 12px; border-radius: 8px; font-size: 14px;
-            background: #0f3460; border-left: 4px solid #f5c542;
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #1b1215;
+            border-left: 4px solid #e5383b;
+            color: #fff;
         }
+
         pre {
-            white-space: pre-wrap; background: #0f3460; padding: 12px;
-            border-radius: 10px; border: 1px solid #2c4f82; margin-top: 10px;
+            white-space: pre-wrap;
+            background: #0f0f14;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #3a2023;
+            margin-top: 10px;
+            color: #fff;
         }
-        .pill-ok { color: #63e6a7; font-weight: bold; }
-        .pill-no { color: #ff8c9a; font-weight: bold; }
+
+        .pill-ok {
+            color: #f5c542;
+            font-weight: bold;
+        }
+
+        .pill-no {
+            color: #ff8c9a;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -947,6 +1136,7 @@ def acao(tipo, msg_id):
         flash(f"Erro ao enviar ação '{tipo}'.")
 
     return redirect(url_for("painel"))
+
 
 # =========================
 # LOOP AUTOMÁTICO
