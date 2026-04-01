@@ -22,16 +22,32 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+
     c.execute("""
         CREATE TABLE IF NOT EXISTS mensagens (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            titulo TEXT,
-            horario TEXT,
-            repetir INTEGER DEFAULT 1,
-            ultimo_envio TEXT DEFAULT '',
+            texto TEXT NOT NULL,
             imagem_path TEXT DEFAULT ''
         )
     """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS horarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            hora TEXT NOT NULL
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS envios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data_envio TEXT NOT NULL,
+            mensagem_id INTEGER NOT NULL,
+            horario TEXT NOT NULL,
+            enviado INTEGER DEFAULT 0
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -67,32 +83,6 @@ def enviar_telegram(texto, imagem_path=""):
         print(f"Erro ao enviar para o Telegram: {e}")
 
 
-def buscar_mensagens():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""
-        SELECT id, titulo, horario, repetir, ultimo_envio, imagem_path
-        FROM mensagens
-        ORDER BY horario
-    """)
-    mensagens = c.fetchall()
-    conn.close()
-    return mensagens
-
-
-def buscar_mensagem_por_id(msg_id):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""
-        SELECT id, titulo, horario, repetir, ultimo_envio, imagem_path
-        FROM mensagens
-        WHERE id=?
-    """, (msg_id,))
-    mensagem = c.fetchone()
-    conn.close()
-    return mensagem
-
-
 def salvar_imagem(upload):
     if upload and upload.filename:
         extensao = os.path.splitext(upload.filename)[1].lower()
@@ -103,15 +93,94 @@ def salvar_imagem(upload):
     return ""
 
 
-HTML_BASE = """
+def get_conexao():
+    return sqlite3.connect(DB_PATH)
+
+
+def listar_mensagens():
+    conn = get_conexao()
+    c = conn.cursor()
+    c.execute("SELECT id, texto, imagem_path FROM mensagens ORDER BY id")
+    dados = c.fetchall()
+    conn.close()
+    return dados
+
+
+def listar_horarios():
+    conn = get_conexao()
+    c = conn.cursor()
+    c.execute("SELECT id, hora FROM horarios ORDER BY hora")
+    dados = c.fetchall()
+    conn.close()
+    return dados
+
+
+def gerar_escala_do_dia():
+    agora = datetime.now(FUSO)
+    data_hoje = agora.strftime("%Y-%m-%d")
+    dia_indice = agora.toordinal()
+
+    conn = get_conexao()
+    c = conn.cursor()
+
+    c.execute("SELECT COUNT(*) FROM envios WHERE data_envio=?", (data_hoje,))
+    ja_existe = c.fetchone()[0]
+
+    if ja_existe > 0:
+        conn.close()
+        return
+
+    c.execute("SELECT id, texto, imagem_path FROM mensagens ORDER BY id")
+    mensagens = c.fetchall()
+
+    c.execute("SELECT hora FROM horarios ORDER BY hora")
+    horarios = [h[0] for h in c.fetchall()]
+
+    if not mensagens or not horarios:
+        conn.close()
+        return
+
+    deslocamento = dia_indice % len(horarios)
+
+    for i, msg in enumerate(mensagens):
+        mensagem_id = msg[0]
+        horario_escolhido = horarios[(i + deslocamento) % len(horarios)]
+        c.execute("""
+            INSERT INTO envios (data_envio, mensagem_id, horario, enviado)
+            VALUES (?, ?, ?, 0)
+        """, (data_hoje, mensagem_id, horario_escolhido))
+
+    conn.commit()
+    conn.close()
+    print(f"Escala do dia gerada para {data_hoje}")
+
+
+def buscar_escala_do_dia():
+    agora = datetime.now(FUSO)
+    data_hoje = agora.strftime("%Y-%m-%d")
+
+    conn = get_conexao()
+    c = conn.cursor()
+    c.execute("""
+        SELECT e.id, e.horario, e.enviado, m.texto, m.imagem_path, m.id
+        FROM envios e
+        JOIN mensagens m ON m.id = e.mensagem_id
+        WHERE e.data_envio=?
+        ORDER BY e.horario
+    """, (data_hoje,))
+    dados = c.fetchall()
+    conn.close()
+    return dados
+
+
+HTML = """
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Painel Profissional</title>
+    <title>Painel Rotativo Diário</title>
     <style>
         * { box-sizing: border-box; }
-
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -119,263 +188,200 @@ HTML_BASE = """
             color: white;
             padding: 24px;
         }
-
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
         }
-
         .topo {
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
-
         .topo h1 {
-            margin: 0 0 10px 0;
+            margin: 0 0 10px;
             font-size: 34px;
         }
-
         .sub {
             color: #cbd5e1;
-            font-size: 15px;
         }
-
+        .badge {
+            display: inline-block;
+            margin-top: 12px;
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+        }
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 22px;
         }
-
         .card {
-            background: rgba(17, 24, 39, 0.92);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(17, 24, 39, 0.94);
             border-radius: 22px;
-            padding: 24px;
+            padding: 22px;
             box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.08);
         }
-
-        .card h2 {
+        h2 {
             margin-top: 0;
-            font-size: 22px;
         }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #e5e7eb;
-        }
-
-        input[type="text"],
-        input[type="time"],
-        textarea,
-        input[type="file"] {
+        textarea, input[type="time"], input[type="file"] {
             width: 100%;
             border: none;
             border-radius: 14px;
             padding: 14px;
+            margin-top: 8px;
             margin-bottom: 16px;
             background: #1f2937;
             color: white;
             font-size: 15px;
         }
-
         textarea {
-            min-height: 150px;
+            min-height: 140px;
             resize: vertical;
         }
-
-        .linha-acoes {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-
-        .btn {
-            display: inline-block;
+        button {
             border: none;
             border-radius: 14px;
             padding: 12px 18px;
             font-weight: bold;
             cursor: pointer;
-            text-decoration: none;
             color: white;
-        }
-
-        .btn-salvar {
             background: linear-gradient(135deg, #22c55e, #16a34a);
         }
-
-        .btn-editar {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-        }
-
-        .btn-excluir {
+        .btn-red {
             background: linear-gradient(135deg, #ef4444, #dc2626);
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 12px;
+            color: white;
+            display: inline-block;
         }
-
-        .btn-cancelar {
-            background: linear-gradient(135deg, #64748b, #475569);
-        }
-
-        .checkbox-wrap {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 18px;
-            color: #e5e7eb;
-        }
-
-        .lista {
-            margin-top: 10px;
-        }
-
         .item {
             background: #0f172a;
-            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 18px;
-            padding: 18px;
-            margin-bottom: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+            border: 1px solid rgba(255,255,255,0.07);
         }
-
-        .item-topo {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: start;
-            margin-bottom: 10px;
+        .msg {
+            white-space: pre-wrap;
+            background: #111827;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 10px;
         }
-
         .tag {
             display: inline-block;
-            background: #1d4ed8;
-            color: white;
-            border-radius: 999px;
-            padding: 5px 10px;
             font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: #1d4ed8;
             margin-right: 6px;
             margin-bottom: 6px;
         }
-
-        .texto-msg {
-            white-space: pre-wrap;
-            background: #111827;
-            border-radius: 14px;
-            padding: 14px;
-            color: #f8fafc;
-            margin-top: 12px;
+        .escala-ok {
+            color: #86efac;
+            font-weight: bold;
         }
-
-        .mini {
-            color: #94a3b8;
-            font-size: 13px;
+        .escala-pendente {
+            color: #fcd34d;
+            font-weight: bold;
         }
-
-        .destaque {
-            background: linear-gradient(135deg, #7c3aed, #2563eb);
-            padding: 10px 14px;
-            border-radius: 999px;
-            display: inline-block;
-            font-size: 13px;
+        .acoes {
             margin-top: 10px;
         }
-
-        .preview {
-            margin-top: 12px;
-            font-size: 14px;
-            color: #cbd5e1;
-        }
-
         .vazio {
             color: #94a3b8;
             text-align: center;
-            padding: 30px 10px;
+            padding: 20px 0;
         }
-
         @media (max-width: 900px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
+            .grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="topo">
-            <h1>📣 Painel Profissional de Mensagens</h1>
-            <div class="sub">Gerencie mensagens automáticas com texto, emojis, imagem e edição</div>
-            <div class="destaque">Horário atual do Brasil: {{ agora }}</div>
+            <h1>🔄 Painel Rotativo Diário</h1>
+            <div class="sub">As mensagens mudam de horário automaticamente a cada dia</div>
+            <div class="badge">Horário atual do Brasil: {{ agora }}</div>
         </div>
 
         <div class="grid">
             <div class="card">
-                <h2>{{ titulo_form }}</h2>
-                <form method="post" enctype="multipart/form-data" action="{{ action_form }}">
-                    <label>Texto da mensagem</label>
-                    <textarea name="titulo" placeholder="Exemplo:
-🔥 NOVIDADE LIBERADA
-📢 Mensagem importante
-💎 Continue acompanhando" required>{{ mensagem_form[1] if mensagem_form else '' }}</textarea>
-
-                    <label>Horário</label>
-                    <input name="horario" type="time" value="{{ mensagem_form[2] if mensagem_form else '' }}" required>
+                <h2>📝 Nova mensagem</h2>
+                <form method="post" action="/nova_mensagem" enctype="multipart/form-data">
+                    <label>Texto</label>
+                    <textarea name="texto" placeholder="Digite sua mensagem com emojis" required></textarea>
 
                     <label>Imagem / banner</label>
-                    <input name="imagem" type="file" accept="image/*">
+                    <input type="file" name="imagem" accept="image/*">
 
-                    <div class="checkbox-wrap">
-                        <input type="checkbox" name="repetir" id="repetir"
-                        {% if not mensagem_form or mensagem_form[3] == 1 %}checked{% endif %}>
-                        <label for="repetir" style="margin:0;">Repetir todos os dias</label>
-                    </div>
-
-                    {% if mensagem_form and mensagem_form[5] %}
-                        <div class="preview">🖼️ Esta mensagem já possui uma imagem salva.</div>
-                    {% endif %}
-
-                    <div class="linha-acoes">
-                        <button class="btn btn-salvar" type="submit">
-                            {{ texto_botao }}
-                        </button>
-
-                        {% if editando %}
-                            <a class="btn btn-cancelar" href="{{ url_for('painel') }}">Cancelar edição</a>
-                        {% endif %}
-                    </div>
+                    <button type="submit">Salvar mensagem</button>
                 </form>
             </div>
 
             <div class="card">
-                <h2>🗂️ Mensagens cadastradas</h2>
-
-                <div class="lista">
-                    {% for m in mensagens %}
-                        <div class="item">
-                            <div class="item-topo">
-                                <div>
-                                    <div class="tag">ID {{ m[0] }}</div>
-                                    <div class="tag">⏰ {{ m[2] }}</div>
-                                    <div class="tag">{{ "🔁 Repete" if m[3] == 1 else "1x Apenas" }}</div>
-                                    <div class="tag">{{ "🖼️ Com imagem" if m[5] else "💬 Só texto" }}</div>
-                                </div>
-                                <div class="mini">
-                                    Último envio: {{ m[4] if m[4] else "-" }}
-                                </div>
-                            </div>
-
-                            <div class="texto-msg">{{ m[1] }}</div>
-
-                            <div class="linha-acoes">
-                                <a class="btn btn-editar" href="{{ url_for('editar', msg_id=m[0]) }}">Editar</a>
-                                <a class="btn btn-excluir" href="{{ url_for('excluir', msg_id=m[0]) }}">Excluir</a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="vazio">Nenhuma mensagem cadastrada ainda.</div>
-                    {% endfor %}
-                </div>
+                <h2>⏰ Novo horário</h2>
+                <form method="post" action="/novo_horario">
+                    <label>Horário</label>
+                    <input type="time" name="hora" required>
+                    <button type="submit">Salvar horário</button>
+                </form>
             </div>
+        </div>
+
+        <div class="grid" style="margin-top:22px;">
+            <div class="card">
+                <h2>📚 Lista de mensagens</h2>
+                {% for m in mensagens %}
+                    <div class="item">
+                        <div class="tag">ID {{ m[0] }}</div>
+                        <div class="tag">{{ "🖼️ Com imagem" if m[2] else "💬 Só texto" }}</div>
+                        <div class="msg">{{ m[1] }}</div>
+                        <div class="acoes">
+                            <a class="btn-red" href="/excluir_mensagem/{{ m[0] }}">Excluir</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="vazio">Nenhuma mensagem cadastrada.</div>
+                {% endfor %}
+            </div>
+
+            <div class="card">
+                <h2>🕒 Lista de horários</h2>
+                {% for h in horarios %}
+                    <div class="item">
+                        <div class="tag">Horário</div>
+                        <div style="font-size:22px; font-weight:bold;">{{ h[1] }}</div>
+                        <div class="acoes">
+                            <a class="btn-red" href="/excluir_horario/{{ h[0] }}">Excluir</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="vazio">Nenhum horário cadastrado.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:22px;">
+            <h2>📅 Escala de hoje</h2>
+            {% for e in escala %}
+                <div class="item">
+                    <div class="tag">Mensagem ID {{ e[5] }}</div>
+                    <div class="tag">⏰ {{ e[1] }}</div>
+                    <div class="tag">{{ "✅ Enviado" if e[2] == 1 else "⌛ Pendente" }}</div>
+                    <div class="{{ 'escala-ok' if e[2] == 1 else 'escala-pendente' }}">
+                        {{ "Enviado" if e[2] == 1 else "Aguardando horário" }}
+                    </div>
+                    <div class="msg">{{ e[3] }}</div>
+                </div>
+            {% else %}
+                <div class="vazio">Cadastre mensagens e horários para gerar a escala do dia.</div>
+            {% endfor %}
         </div>
     </div>
 </body>
@@ -383,155 +389,117 @@ HTML_BASE = """
 """
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def painel():
-    if request.method == "POST":
-        titulo = request.form["titulo"].strip()
-        horario = request.form["horario"].strip()
-        repetir = 1 if request.form.get("repetir") == "on" else 0
-        imagem = request.files.get("imagem")
-        imagem_path = salvar_imagem(imagem)
-
-        if titulo and horario:
-            conn = sqlite3.connect(DB_PATH)
-            c = conn.cursor()
-            c.execute(
-                "INSERT INTO mensagens (titulo, horario, repetir, imagem_path) VALUES (?, ?, ?, ?)",
-                (titulo, horario, repetir, imagem_path)
-            )
-            conn.commit()
-            conn.close()
-
-        return redirect(url_for("painel"))
-
-    mensagens = buscar_mensagens()
+    gerar_escala_do_dia()
     agora = datetime.now(FUSO).strftime("%H:%M")
+    mensagens = listar_mensagens()
+    horarios = listar_horarios()
+    escala = buscar_escala_do_dia()
 
     return render_template_string(
-        HTML_BASE,
-        mensagens=mensagens,
+        HTML,
         agora=agora,
-        titulo_form="✨ Nova mensagem",
-        texto_botao="Salvar mensagem",
-        editando=False,
-        mensagem_form=None,
-        action_form=url_for("painel")
+        mensagens=mensagens,
+        horarios=horarios,
+        escala=escala
     )
 
 
-@app.route("/editar/<int:msg_id>", methods=["GET", "POST"])
-def editar(msg_id):
-    mensagem = buscar_mensagem_por_id(msg_id)
+@app.route("/nova_mensagem", methods=["POST"])
+def nova_mensagem():
+    texto = request.form["texto"].strip()
+    imagem = request.files.get("imagem")
+    imagem_path = salvar_imagem(imagem)
 
-    if not mensagem:
-        return redirect(url_for("painel"))
-
-    if request.method == "POST":
-        titulo = request.form["titulo"].strip()
-        horario = request.form["horario"].strip()
-        repetir = 1 if request.form.get("repetir") == "on" else 0
-        imagem = request.files.get("imagem")
-
-        imagem_path = mensagem[5]
-        nova_imagem = salvar_imagem(imagem)
-
-        if nova_imagem:
-            if imagem_path and os.path.exists(imagem_path):
-                try:
-                    os.remove(imagem_path)
-                except:
-                    pass
-            imagem_path = nova_imagem
-
-        conn = sqlite3.connect(DB_PATH)
+    if texto:
+        conn = get_conexao()
         c = conn.cursor()
-        c.execute("""
-            UPDATE mensagens
-            SET titulo=?, horario=?, repetir=?, imagem_path=?
-            WHERE id=?
-        """, (titulo, horario, repetir, imagem_path, msg_id))
+        c.execute(
+            "INSERT INTO mensagens (texto, imagem_path) VALUES (?, ?)",
+            (texto, imagem_path)
+        )
         conn.commit()
         conn.close()
 
-        return redirect(url_for("painel"))
-
-    mensagens = buscar_mensagens()
-    agora = datetime.now(FUSO).strftime("%H:%M")
-
-    return render_template_string(
-        HTML_BASE,
-        mensagens=mensagens,
-        agora=agora,
-        titulo_form=f"✏️ Editando mensagem #{msg_id}",
-        texto_botao="Salvar alterações",
-        editando=True,
-        mensagem_form=mensagem,
-        action_form=url_for("editar", msg_id=msg_id)
-    )
+    return redirect(url_for("painel"))
 
 
-@app.route("/excluir/<int:msg_id>")
-def excluir(msg_id):
-    conn = sqlite3.connect(DB_PATH)
+@app.route("/novo_horario", methods=["POST"])
+def novo_horario():
+    hora = request.form["hora"].strip()
+
+    if hora:
+        conn = get_conexao()
+        c = conn.cursor()
+        c.execute("INSERT INTO horarios (hora) VALUES (?)", (hora,))
+        conn.commit()
+        conn.close()
+
+    return redirect(url_for("painel"))
+
+
+@app.route("/excluir_mensagem/<int:item_id>")
+def excluir_mensagem(item_id):
+    conn = get_conexao()
     c = conn.cursor()
-    c.execute("SELECT imagem_path FROM mensagens WHERE id=?", (msg_id,))
-    item = c.fetchone()
 
+    c.execute("SELECT imagem_path FROM mensagens WHERE id=?", (item_id,))
+    item = c.fetchone()
     if item and item[0] and os.path.exists(item[0]):
         try:
             os.remove(item[0])
         except:
             pass
 
-    c.execute("DELETE FROM mensagens WHERE id=?", (msg_id,))
+    c.execute("DELETE FROM mensagens WHERE id=?", (item_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("painel"))
 
 
-def verificar_mensagens():
+@app.route("/excluir_horario/<int:item_id>")
+def excluir_horario(item_id):
+    conn = get_conexao()
+    c = conn.cursor()
+    c.execute("DELETE FROM horarios WHERE id=?", (item_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("painel"))
+
+
+def verificar_envios():
     while True:
+        gerar_escala_do_dia()
+
         agora = datetime.now(FUSO)
-        hora_atual = agora.strftime("%H:%M")
         data_hoje = agora.strftime("%Y-%m-%d")
+        hora_atual = agora.strftime("%H:%M")
+        print(f"Verificando envios... {data_hoje} {hora_atual}")
 
-        print(f"Verificando mensagens... horário Brasil: {hora_atual}")
-
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_conexao()
         c = conn.cursor()
         c.execute("""
-            SELECT id, titulo, horario, repetir, ultimo_envio, imagem_path
-            FROM mensagens
-        """)
-        mensagens = c.fetchall()
+            SELECT e.id, e.mensagem_id, e.horario, e.enviado, m.texto, m.imagem_path
+            FROM envios e
+            JOIN mensagens m ON m.id = e.mensagem_id
+            WHERE e.data_envio=? AND e.horario=? AND e.enviado=0
+        """, (data_hoje, hora_atual))
 
-        for m in mensagens:
-            msg_id, titulo, horario, repetir, ultimo_envio, imagem_path = m
+        pendentes = c.fetchall()
 
-            if horario == hora_atual:
-                if repetir == 1:
-                    if ultimo_envio != data_hoje:
-                        enviar_telegram(titulo, imagem_path)
-                        c.execute(
-                            "UPDATE mensagens SET ultimo_envio=? WHERE id=?",
-                            (data_hoje, msg_id)
-                        )
-                        print(f"Mensagem repetida enviada: {titulo}")
-                else:
-                    if ultimo_envio == "":
-                        enviar_telegram(titulo, imagem_path)
-                        c.execute(
-                            "UPDATE mensagens SET ultimo_envio=? WHERE id=?",
-                            (data_hoje, msg_id)
-                        )
-                        print(f"Mensagem única enviada: {titulo}")
+        for p in pendentes:
+            envio_id, mensagem_id, horario, enviado, texto, imagem_path = p
+            enviar_telegram(texto, imagem_path)
+            c.execute("UPDATE envios SET enviado=1 WHERE id=?", (envio_id,))
+            print(f"Mensagem {mensagem_id} enviada às {horario}")
 
         conn.commit()
         conn.close()
         time.sleep(20)
 
 
-threading.Thread(target=verificar_mensagens, daemon=True).start()
+threading.Thread(target=verificar_envios, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
