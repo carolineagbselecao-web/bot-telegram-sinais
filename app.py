@@ -19,7 +19,7 @@ import re
 from functools import wraps
 
 # =========================
-# CONFIG
+# CONFIGURAÇÕES
 # =========================
 TOKEN = os.getenv("TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
@@ -34,6 +34,9 @@ app.secret_key = SECRET_KEY
 FUSO = pytz.timezone("America/Sao_Paulo")
 DB_PATH = "database.db"
 
+# =========================
+# ESTRATÉGIAS
+# =========================
 ESTRATEGIAS = [
     "🔥 Entre com aposta baixa nas primeiras 5 rodadas\n💰 Se não sair, dobre na 6ª entrada\n⚡ Máximo 3 martingales\n🛑 Stop loss: 20% da banca",
     "🎯 Aguarde 3 rodadas sem ganho\n🚀 Entre na 4ª rodada com valor médio\n💎 Stop gain: 30%\n🛑 Stop loss: 20% da banca",
@@ -47,6 +50,9 @@ ESTRATEGIAS = [
     "⚡ Aguarde o bonus aparecer 1 vez\n🚀 Entre nas próximas 3 rodadas\n💎 Aposte 5% da banca\n🛑 Stop loss: 20%",
 ]
 
+# =========================
+# JOGOS
+# =========================
 JOGOS = {
     "Fortune Tiger": "🐯",
     "Fortune Rabbit": "🐰",
@@ -181,9 +187,8 @@ JOGOS = {
     "Sizzling Hot": "🔥🍒",
 }
 
-
 # =========================
-# HELPERS
+# FUNÇÕES AUXILIARES
 # =========================
 def db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -248,6 +253,7 @@ def gerar_green(nome_jogo):
 
 💸 Parabéns para quem entrou!
 🔥 Comentem: EU FUI"""
+
 
 def gerar_red(nome_jogo):
     emoji = JOGOS.get(nome_jogo, "🎰")
@@ -339,7 +345,6 @@ def enviar_telegram(texto, imagem_url=""):
 
         resultado = requests.post(url, data=data, timeout=30)
         ok = resultado.status_code == 200
-
         detalhe = f"{resultado.status_code} - {resultado.text[:300]}"
         print(f"Telegram respondeu: {detalhe}")
         return ok, detalhe
@@ -430,9 +435,8 @@ def horarios_hoje():
 def preview_mensagem(nome_jogo):
     return gerar_mensagem(nome_jogo)
 
-
 # =========================
-# HTML
+# HTML LOGIN
 # =========================
 LOGIN_HTML = """
 <!DOCTYPE html>
@@ -497,6 +501,7 @@ LOGIN_HTML = """
     <div class="box">
         <h1>👑 Painel Rainha Games</h1>
         <p>Faça login para acessar o painel</p>
+
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for m in messages %}
@@ -504,16 +509,39 @@ LOGIN_HTML = """
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
         <form method="post">
             <input name="usuario" placeholder="Usuário">
-            <input name="senha" type="password" placeholder="Senha">
+
+            <div style="position: relative;">
+                <input id="senha" name="senha" type="password" placeholder="Senha" style="padding-right: 45px;">
+                <span onclick="toggleSenha()"
+                      style="position: absolute; right: 12px; top: 38%; transform: translateY(-50%); cursor: pointer; font-size: 18px;">
+                    👁
+                </span>
+            </div>
+
             <button>Entrar</button>
         </form>
     </div>
+
+    <script>
+        function toggleSenha() {
+            var input = document.getElementById("senha");
+            if (input.type === "password") {
+                input.type = "text";
+            } else {
+                input.type = "password";
+            }
+        }
+    </script>
 </body>
 </html>
 """
 
+# =========================
+# HTML PRINCIPAL
+# =========================
 HTML = """
 <!DOCTYPE html>
 <html>
@@ -557,7 +585,7 @@ HTML = """
         }
         .card h2 { color: #f5c542; margin-bottom: 15px; font-size: 18px; }
         label { display: block; color: #ccc; margin-bottom: 5px; font-size: 14px; }
-        input, select, textarea {
+        input, select {
             width: 100%; padding: 10px; background: #0f3460; color: #fff;
             border: 1px solid #f5c542; border-radius: 8px; margin-bottom: 12px; font-size: 14px;
         }
@@ -565,6 +593,7 @@ HTML = """
         .btn {
             background: #f5c542; color: #000; padding: 10px 12px; border: none;
             border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;
+            display: inline-block;
         }
         .btn:hover { background: #e5b532; }
         .btn-red { background: #e8384f; color: #fff; }
@@ -594,7 +623,6 @@ HTML = """
             white-space: pre-wrap; background: #0f3460; padding: 12px;
             border-radius: 10px; border: 1px solid #2c4f82; margin-top: 10px;
         }
-        .mini-form { display: inline; }
         .pill-ok { color: #63e6a7; font-weight: bold; }
         .pill-no { color: #ff8c9a; font-weight: bold; }
     </style>
@@ -640,7 +668,7 @@ HTML = """
 
                 <button class="btn">💾 Salvar Jogo</button>
             </form>
-            <div class="dica">💡 O sistema continua gerando estratégia automática e variando a mensagem a cada envio.</div>
+            <div class="dica">💡 Estratégia automática e variável a cada envio.</div>
         </div>
 
         <div class="card">
@@ -744,9 +772,8 @@ HTML = """
 </html>
 """
 
-
 # =========================
-# ROUTES
+# ROTAS
 # =========================
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -921,9 +948,8 @@ def acao(tipo, msg_id):
 
     return redirect(url_for("painel"))
 
-
 # =========================
-# AUTO ENVIO
+# LOOP AUTOMÁTICO
 # =========================
 def verificar_mensagens():
     while True:
@@ -958,7 +984,6 @@ def verificar_mensagens():
                     ultimo_alerta = m["ultimo_alerta"] or ""
                     horario_jogo = horarios[i]
 
-                    # Alerta automático 2 minutos antes
                     if horario_jogo == hora_alerta and ultimo_alerta != data_hoje:
                         texto_alerta = gerar_alerta(nome_jogo)
                         ok, detalhe = enviar_telegram(texto_alerta, imagem_url)
@@ -970,7 +995,6 @@ def verificar_mensagens():
                             )
                             print(f"Alerta enviado: {nome_jogo}")
 
-                    # Sinal automático no horário
                     if horario_jogo == hora_atual and ultimo_envio != data_hoje:
                         texto = gerar_mensagem(nome_jogo)
                         ok, detalhe = enviar_telegram(texto, imagem_url)
@@ -993,10 +1017,8 @@ def verificar_mensagens():
 
 threading.Thread(target=verificar_mensagens, daemon=True).start()
 
-
 # =========================
-# MAIN
+# INICIAR APP
 # =========================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT)
-
