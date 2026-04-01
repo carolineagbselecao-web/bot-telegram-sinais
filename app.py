@@ -32,7 +32,7 @@ app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
 FUSO = pytz.timezone("America/Sao_Paulo")
-DB_PATH = "database.db"
+DB_PATH = os.path.join(os.getcwd(), "database.db")
 
 # =========================
 # ESTRATÉGIAS
@@ -282,6 +282,12 @@ def log_envio(tipo, nome_jogo, status, detalhe=""):
     conn.close()
 
 
+def coluna_existe(cursor, tabela, coluna):
+    cursor.execute(f"PRAGMA table_info({tabela})")
+    colunas = [row[1] for row in cursor.fetchall()]
+    return coluna in colunas
+
+
 def init_db():
     conn = db()
     c = conn.cursor()
@@ -291,11 +297,15 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome_jogo TEXT NOT NULL,
             imagem_url TEXT DEFAULT '',
-            ultimo_envio TEXT DEFAULT '',
-            ultimo_alerta TEXT DEFAULT '',
-            ativo INTEGER DEFAULT 1
+            ultimo_envio TEXT DEFAULT ''
         )
     """)
+
+    if not coluna_existe(c, "mensagens", "ultimo_alerta"):
+        c.execute("ALTER TABLE mensagens ADD COLUMN ultimo_alerta TEXT DEFAULT ''")
+
+    if not coluna_existe(c, "mensagens", "ativo"):
+        c.execute("ALTER TABLE mensagens ADD COLUMN ativo INTEGER DEFAULT 1")
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS horarios (
