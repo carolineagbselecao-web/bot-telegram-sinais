@@ -12,7 +12,7 @@ CHAT_ID = os.getenv("CHAT_ID")
 app = Flask(__name__)
 
 def init_db():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect("/tmp/database.db")
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS sinais (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,15 +34,15 @@ def painel():
     if request.method == "POST":
         jogo = request.form["jogo"]
         horario = request.form["horario"]
-        conn = sqlite3.connect("database.db")
+        conn = sqlite3.connect("/tmp/database.db")
         c = conn.cursor()
         c.execute("INSERT INTO sinais (jogo, horario) VALUES (?, ?)", (jogo, horario))
         conn.commit()
         conn.close()
 
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect("/tmp/database.db")
     c = conn.cursor()
-    c.execute("SELECT * FROM sinais")
+    c.execute("SELECT * FROM sinais WHERE enviado=0")
     sinais = c.fetchall()
     conn.close()
 
@@ -53,7 +53,7 @@ def painel():
         Horário (HH:MM): <input name="horario"><br><br>
         <button>Salvar</button>
     </form>
-    <h3>Sinais programados:</h3>
+    <h3>Sinais pendentes:</h3>
     {% for s in sinais %}
         <p>{{s[1]}} - {{s[2]}}</p>
     {% endfor %}
@@ -63,7 +63,7 @@ def painel():
 def enviar_sinais():
     while True:
         agora = datetime.now().strftime("%H:%M")
-        conn = sqlite3.connect("database.db")
+        conn = sqlite3.connect("/tmp/database.db")
         c = conn.cursor()
         c.execute("SELECT * FROM sinais WHERE horario=? AND enviado=0", (agora,))
         sinais = c.fetchall()
@@ -82,7 +82,7 @@ def enviar_sinais():
             c.execute("UPDATE sinais SET enviado=1 WHERE id=?", (s[0],))
         conn.commit()
         conn.close()
-        time.sleep(30)
+        time.sleep(20)
 
 threading.Thread(target=enviar_sinais, daemon=True).start()
 
