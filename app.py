@@ -1,5 +1,4 @@
 from flask import Flask, render_template_string
-import sqlite3
 import threading
 import time
 from datetime import datetime
@@ -13,21 +12,23 @@ CHAT_ID = os.getenv("CHAT_ID")
 
 app = Flask(__name__)
 FUSO = pytz.timezone("America/Sao_Paulo")
-DB_PATH = "/tmp/database.db"
 
 ESTRATEGIAS = [
     "🔥 Entre com aposta baixa nas primeiras 5 rodadas\n💰 Se não sair, dobre na 6ª entrada\n⚡ Máximo 3 martingales\n🛑 Stop loss: 20% da banca",
-    "🎯 Aguarde 3 rodadas sem ganho\n🚀 Entre na 4ª rodada com valor médio\n💎 Stop gain: 30%\n🛑 Stop loss: 20% da banca",
+    "🎯 Aguarde 3 rodadas sem ganho\n🚀 ENTRE AGORA na 4ª rodada\n💎 Stop gain: 30%\n🛑 Stop loss: 20% da banca",
     "💎 Observe 5 rodadas antes de entrar\n🎰 3 entradas com 10% da banca\n⚡ Pare ao primeiro green\n🛑 Stop loss: 15%",
     "🌟 Aposte fixo por 6 rodadas\n💰 Dobre apenas 2 vezes\n🔄 Pare ao primeiro green\n🛑 Stop loss: 15% da banca",
-    "⚡ Entre com bet baixo por 5 rodadas\n🚀 Aumente na 6ª se não saiu\n📊 Limite de 3 martingales\n💰 Stop gain: 35%",
+    "⚡ ENTRADA CONFIRMADA — bet baixo por 5 rodadas\n🚀 Aumente na 6ª se não saiu\n📊 Limite de 3 martingales\n💰 Stop gain: 35%",
     "🎰 Observe 3 rodadas antes de entrar\n💎 Aposte 8% da banca por entrada\n🔥 Máximo 4 tentativas\n🛑 Stop loss: 25%",
-    "🌈 Entre somente após 4 rodadas sem ganho\n💰 Bet progressivo: 5%, 8%, 12%\n⚡ Stop gain: 25% de lucro",
-    "🃏 Jogue leve nas primeiras 8 rodadas\n🚀 Force entrada na 9ª\n📊 3 martingales e pare\n🛑 Stop loss: 20%",
-    "🎯 Entre após sequência de 3 perdas\n💰 Aposte 6% da banca\n🔥 Stop gain: 40%\n🛑 Stop loss: 18%",
-    "⚡ Aguarde o bonus aparecer 1 vez\n🚀 Entre nas próximas 3 rodadas\n💎 Aposte 5% da banca\n🛑 Stop loss: 20%",
+    "🌈 ENTRE AGORA após 4 rodadas sem ganho\n💰 Bet progressivo: 5%, 8%, 12%\n⚡ Stop gain: 25% de lucro",
+    "🃏 Jogue leve nas primeiras 8 rodadas\n🚀 FORCE ENTRADA na 9ª\n📊 3 martingales e pare\n🛑 Stop loss: 20%",
+    "🎯 ENTRADA QUENTE após 3 perdas seguidas\n💰 Aposte 6% da banca\n🔥 Stop gain: 40%\n🛑 Stop loss: 18%",
+    "⚡ Aguarde o bonus aparecer 1 vez\n🚀 ENTRE NAS PRÓXIMAS 3 RODADAS\n💎 Aposte 5% da banca\n🛑 Stop loss: 20%",
     "🎲 Comece com 3% da banca\n💰 Aumente 1% a cada perda\n🏆 Pare ao atingir 25% de lucro\n🛑 Stop loss: 15%",
-    "🌙 Entrada estratégica noturna\n💎 Aposte valor fixo por 10 rodadas\n⚡ Dobre apenas na 11ª\n🛑 Stop loss: 20%",
+    "🔥 ENTRADA AGORA — aposte valor fixo\n💎 Máximo 10 rodadas seguidas\n⚡ Dobre apenas uma vez\n🛑 Stop loss: 20%",
+    "💥 SINAL QUENTE — entre com 5% da banca\n🎯 3 tentativas máximo\n💰 Stop gain: 30%\n🛑 Stop loss: 15%",
+    "🚀 ENTRE AGORA com bet médio\n🔄 Se perder, aguarde 3 rodadas e entre de novo\n💎 Stop gain: 25%\n🛑 Stop loss: 20%",
+    "⚡ ENTRADA IMEDIATA — bet fixo por 8 rodadas\n💰 Dobre na 9ª se não saiu\n🏆 Stop gain: 35%\n🛑 Stop loss: 20%",
 ]
 
 CABECALHOS = [
@@ -49,271 +50,93 @@ RODAPES = [
 ]
 
 JOGOS = {
-    # PG Soft
-    "Fortune Tiger": "🐯",
-    "Fortune Rabbit": "🐰",
-    "Fortune Dragon": "🐉",
-    "Fortune Mouse": "🐭",
-    "Fortune Ox": "🐂",
-    "Fortune Horse": "🐴",
-    "Fortune Snake": "🐍",
-    "Mahjong Ways": "🀄",
-    "Wild Bandito": "🤠💥",
-    "Treasures of Aztec": "🏺⚡",
-    "Candy Bonanza": "🍬💥",
-    "Leprechaun Riches": "🍀💛",
-    # Pragmatic Play
-    "Gates of Olympus": "⚡",
-    "Sweet Bonanza": "🍬",
-    "Big Bass Bonanza": "🐟",
-    "The Dog House": "🐕",
-    "Starlight Princess": "⭐",
-    "Sugar Rush": "🍭",
-    "Floating Dragon": "🐉🌊",
-    "Bigger Bass Bonanza": "🐟💰",
-    "Wild West Gold": "🤠🌵",
-    "Joker's Jewels": "🃏💎",
-    # Nolimit City
-    "Fire in the Hole 3": "💣🔥",
-    "San Quentin xWays": "🔒⚡",
-    "Tombstone RIP": "💀🪦",
-    "Deadwood xNudge": "🤠💀",
-    "Mental": "🧠💥",
-    "Punk Rocker": "🎸🤘",
-    "Book of Shadows": "📖🌑",
-    "Infectious 5 xWays": "🦠⚡",
-    "Folsom Prison": "🔒🏛️",
-    "Brute Force": "💪💥",
-    # Red Tiger
-    "Dragon's Fire": "🐉🔥",
-    "Rainbow Jackpots": "🌈💰",
-    "Golden Leprechaun Megaways": "🍀💛",
-    "Primate King": "🦍👑",
-    "Thor's Lightning": "⚡🔨",
-    "Pirates Plenty": "🏴‍☠️💎",
-    "Mystery Reels Megaways": "🎰✨",
-    "Vault of Anubis": "⚱️👁️",
-    "God of Wealth": "🙏💰",
-    "Ali Baba's Luck": "🪔💎",
-    # Playtech
-    "Age of the Gods": "⚡👑",
-    "Buffalo Blitz": "🦬💨",
-    "Gladiator": "⚔️🏛️",
-    "Great Blue": "🌊🐳",
-    "Heart of the Frontier": "🤠❤️",
-    "Kingdoms Rise": "⚔️🏰",
-    # Fa Chai
-    "Circus Delight": "🎪🎠",
-    "Emoji Riches": "😍💰",
-    "Wild Ape": "🦍🌴",
-    "Ninja vs Samurai": "🥷⚔️",
-    "Charge Buffalo": "🦬⚡",
-    # JDB
-    "Book of Myth": "📖🔮",
-    "Lucky Goldenfish": "🐟💛",
-    "Dragon Treasure": "🐉💎",
-    "Fishing War": "🎣⚔️",
-    "Super Bonus Slot": "🎰💥",
-    # Belatra
-    "Lucky Drink": "🍹🍀",
-    "Piggy Bank": "🐷💰",
-    "Cleo's Book": "📖👸",
-    "Big Wild Buffalo": "🦬💥",
-    "Dragon's Bonanza": "🐉💎",
-    "Mummyland Treasures": "⚱️🏺",
-    # Rectangle Games
-    "Tiger Gold": "🐯💛",
-    "Dragon Pearl": "🐉🔮",
-    "Lucky Fortune": "🍀💰",
-    # Spribe
-    "Aviator": "✈️💰",
-    "Plinko": "🎯💸",
-    "Mines": "💣⚠️",
-    "Dice": "🎲💰",
-    # TaDa Gaming
-    "Fishing God": "🎣🙏",
-    "Dragon Legend": "🐉✨",
-    "Lucky Koi": "🐠🍀",
-    "Golden Toad": "🐸💛",
-    "Jungle King": "🌿🦁",
-    # Turbo Games
-    "Fruit Super Nova": "🍎⭐",
-    "Lucky Wheel": "🎡🍀",
-    "Space Catcher": "🚀🎯",
-    "Coin Flip": "🪙🔄",
-    # SmartGuys
-    "Fruit Party": "🍇🎉",
-    "Lucky Stars": "⭐🍀",
-    "Ocean Fortune": "🌊💰",
-    # CP Games
-    "Dragon Ball CP": "🐉⚽",
-    "Golden Fish": "🐟💛",
-    "Lucky Charm": "🍀✨",
-    # BB Games
-    "Fortune Bull": "🐂💰",
-    "Dragon Palace": "🐉🏯",
-    # Live22
-    "Tiger King": "🐯👑",
-    "Ocean King": "🌊👑",
-    "Lucky Dragon": "🐉🍀",
-    "Caishen Riches": "🧧💰",
-    # FTG
-    "Dragon Gold": "🐉💛",
-    "Fortune Wheel": "🎡💰",
-    # OneTouch
-    "Hi-Lo": "🃏⬆️",
-    "Keno": "🎯🔢",
-    # BGaming
-    "Wild Tiger": "🐯⚡",
-    "Bonanza Billion": "💎💰",
-    "Fruit Million": "🍎🎰",
-    "Burning Chilli X": "🌶️🔥",
-    "Wild Clusters": "🍇✨",
-    # Ruby Play
-    "777 Strike": "7️⃣🎰",
-    "Aztec Fire": "🔥🏺",
-    "Cash Bonanza": "💰🎊",
-    "Fire and Gold": "🔥💛",
-    "Lucky Piggy": "🐷🍀",
-    # Endorphina
-    "Book of Aztec": "📖🏺",
-    "Twerk": "💃🎵",
-    "Satoshi's Secret": "💻🔐",
-    "Fruitmania": "🍓🎰",
-    "Vegas Nights": "🌃🎲",
-    # Playson
-    "Solar Queen": "☀️👑",
-    "Book of Gold": "📖💛",
-    "Burning Wins": "🔥🏆",
-    "Pearl River": "💧🐲",
-    "Legend of Cleopatra": "👸🏺",
-    # Hacksaw Gaming
-    "Wanted Dead or a Wild": "🤠🔫",
-    "Stick Em": "🎯💥",
-    "Chaos Crew": "🦹💣",
-    "Cubes": "🧊⚡",
-    "Pizza Pays": "🍕💰",
-    # 3 Oaks Gaming
-    "Hot Triple Sevens": "7️⃣🔥",
-    "Candy Boom": "🍬💥",
-    "Gold Express": "🚂💛",
-    "Mighty Kong": "🦍💪",
-    "Book of Tattoo": "📖🎨",
-    # Microgaming
-    "Mega Moolah": "🦁💰",
-    "Thunderstruck II": "⚡🔨",
-    "Immortal Romance": "🧛💕",
-    "Break da Bank Again": "🏦💥",
-    "Avalon II": "⚔️🏰",
-    "Jurassic World": "🦕🌿",
-    "Agent Jane Blonde": "🕵️💋",
-    "Mermaids Millions": "🧜💎",
-    "Thunderstruck Wild Lightning": "⚡🌩️",
-    "Lucky Twins": "🐉🐉",
-    # B Gaming
-    "Aztec Gold": "🏺💛",
-    "Book of Egypt": "📖🐱",
-    "Cleopatra Jewels": "👸💎",
-    "Lucky Farm": "🌾🍀",
-    "Pirate Gold": "🏴‍☠️💛",
-    "Magic Forest": "🌲✨",
-    "Safari Heat": "🦁🔥",
-    "Thai Flower": "🌸💐",
-    "Wolf Moon": "🐺🌙",
-    # Fat Panda
-    "Panda Panda": "🐼🎋",
-    "Lucky Panda": "🐼🍀",
-    "Panda Gold": "🐼💛",
-    # Spirit Gaming
-    "Ox Fortune": "🐂💰",
-    "Mouse Fortune": "🐭💰",
-    "Rabbit Fortune": "🐰💰",
-    "Tiger Fortune": "🐯💰",
-    "Dragon Fortune": "🐉💰",
-    # Original Games
-    "Book of Ra": "📖☀️",
-    "Lucky Lady's Charm": "🍀💋",
-    "Sizzling Hot": "🔥🍒",
-    # Funky Games
-    "Racing King": "🏎️🏆",
-    "White Tiger": "🐯⬜",
-    "Golden Koi Rise": "🐟💛",
-    "Plinko UFO": "🛸💰",
-    "Football Strike": "⚽🎯",
-    # 759 Gaming
-    "Lucky Dragons": "🐉🍀",
-    "Fortune Fish": "🐟💰",
-    "Golden Wheel": "🎡💛",
-    "Tiger Boom": "🐯💥",
-    "Phoenix Rise": "🦅🔥",
-    "Wild Panda": "🐼🌿",
-    "Gold Rush": "⛏️💛",
-    "Ocean Dragon": "🌊🐉",
-    # Pateplay
-    "Buffalo Thunder": "🦬⚡",
-    "Aztec Temple": "🏺🌿",
-    "Viking Glory": "⚔️🛡️",
-    # Revenge Games
-    "Revenge of Medusa": "🐍👑",
-    "Pirate's Revenge": "🏴‍☠️⚔️",
-    "Viking's Revenge": "⚔️🔥",
-    "Dragon's Revenge": "🐉💢",
-    "Warrior's Revenge": "⚔️💪",
-    # Betby
-    "Penalty Shootout": "⚽🥅",
-    "Virtual Horse Racing": "🏇🏆",
-    # 1Bet
-    "Golden Tiger": "🐯💛",
-    "Lucky Coins": "🪙🍀",
-    # Easybet
-    "Lucky Sevens": "7️⃣✨",
-    "Wild West": "🤠🌵",
-    # Outros
-    "Devil Fire Twins": "😈🔥",
-    "Bone Fortune": "💀🎰",
-    "Fortune Hook Boom": "🎣💥",
-    "Fortune Hook": "🎣",
-    "Lucky Jaguar 500": "🐆",
-    "Money Pot": "🍀💰",
-    "Pirate Queen 2": "🏴‍☠️👑",
-    "Caribbean Queen": "🌊👑",
-    "Poseidon": "🔱",
-    "Monkey Boom": "🐒💥",
-    "Cybercats 500x": "🤖🐱",
-    "Hamsta": "🐹",
-    "Athens Megaways": "🏛️",
-    "Bass Boss": "🐟👑",
-    "Cake and Ice Cream": "🎂🍦",
-    "Clover Craze": "🍀",
-    "God Hand": "🙏⚡",
-    "Infinity Tower": "🗼♾️",
-    "Rise of the Mighty Gods": "⚡👑",
-    "Magic Ace": "🃏✨",
-    "Mjolnir": "⚡🔨",
-    "Prosperity Tiger": "🐯💰",
-    "Treasure Bowl": "🏺💎",
-    "Alibaba's Cave": "🪔💰",
-    "Cash Mania": "💵🎰",
-    "Doomsday Rampage": "💥🌋",
-    "Double Fortune": "🍀🍀",
-    "Forbidden Alchemy": "⚗️🔮",
-    "Fortune Ganesha": "🐘🙏",
-    "Inferno Mayhem": "🔥💀",
-    "Eternal Kiss": "💋🌹",
-    "Electro Fiesta": "⚡🎉",
-    "Halloween Meow": "🎃🐱",
-    "Magic Scroll": "📜✨",
-    "Futebol Fever": "⚽🔥",
-    "Joker Coins": "🃏🪙",
-    "Cowboys": "🤠🌵",
-    "Chihuahua": "🐕",
-    "Elves Town": "🧝🏘️",
-    "Bank Robbers": "🏦🦹",
-    "Golden Genie": "🧞💛",
-    "Poker Win": "♠️💰",
+    "Fortune Tiger": "🐯", "Fortune Rabbit": "🐰", "Fortune Dragon": "🐉",
+    "Fortune Mouse": "🐭", "Fortune Ox": "🐂", "Fortune Horse": "🐴",
+    "Fortune Snake": "🐍", "Mahjong Ways": "🀄", "Wild Bandito": "🤠💥",
+    "Treasures of Aztec": "🏺⚡", "Candy Bonanza": "🍬💥", "Leprechaun Riches": "🍀💛",
+    "Gates of Olympus": "⚡", "Sweet Bonanza": "🍬", "Big Bass Bonanza": "🐟",
+    "The Dog House": "🐕", "Starlight Princess": "⭐", "Sugar Rush": "🍭",
+    "Floating Dragon": "🐉🌊", "Bigger Bass Bonanza": "🐟💰", "Wild West Gold": "🤠🌵",
+    "Joker's Jewels": "🃏💎", "Fire in the Hole 3": "💣🔥", "San Quentin xWays": "🔒⚡",
+    "Tombstone RIP": "💀🪦", "Deadwood xNudge": "🤠💀", "Mental": "🧠💥",
+    "Punk Rocker": "🎸🤘", "Book of Shadows": "📖🌑", "Infectious 5 xWays": "🦠⚡",
+    "Folsom Prison": "🔒🏛️", "Brute Force": "💪💥", "Dragon's Fire": "🐉🔥",
+    "Rainbow Jackpots": "🌈💰", "Golden Leprechaun Megaways": "🍀💛",
+    "Primate King": "🦍👑", "Thor's Lightning": "⚡🔨", "Pirates Plenty": "🏴‍☠️💎",
+    "Mystery Reels Megaways": "🎰✨", "Vault of Anubis": "⚱️👁️",
+    "God of Wealth": "🙏💰", "Ali Baba's Luck": "🪔💎",
+    "Age of the Gods": "⚡👑", "Buffalo Blitz": "🦬💨", "Gladiator": "⚔️🏛️",
+    "Great Blue": "🌊🐳", "Heart of the Frontier": "🤠❤️", "Kingdoms Rise": "⚔️🏰",
+    "Circus Delight": "🎪🎠", "Emoji Riches": "😍💰", "Wild Ape": "🦍🌴",
+    "Ninja vs Samurai": "🥷⚔️", "Charge Buffalo": "🦬⚡",
+    "Book of Myth": "📖🔮", "Lucky Goldenfish": "🐟💛", "Dragon Treasure": "🐉💎",
+    "Fishing War": "🎣⚔️", "Super Bonus Slot": "🎰💥",
+    "Lucky Drink": "🍹🍀", "Piggy Bank": "🐷💰", "Cleo's Book": "📖👸",
+    "Big Wild Buffalo": "🦬💥", "Dragon's Bonanza": "🐉💎", "Mummyland Treasures": "⚱️🏺",
+    "Tiger Gold": "🐯💛", "Dragon Pearl": "🐉🔮", "Lucky Fortune": "🍀💰",
+    "Aviator": "✈️💰", "Plinko": "🎯💸", "Mines": "💣⚠️", "Dice": "🎲💰",
+    "Fishing God": "🎣🙏", "Dragon Legend": "🐉✨", "Lucky Koi": "🐠🍀",
+    "Golden Toad": "🐸💛", "Jungle King": "🌿🦁",
+    "Fruit Super Nova": "🍎⭐", "Lucky Wheel": "🎡🍀", "Space Catcher": "🚀🎯",
+    "Coin Flip": "🪙🔄", "Fruit Party": "🍇🎉", "Lucky Stars": "⭐🍀",
+    "Ocean Fortune": "🌊💰", "Dragon Ball CP": "🐉⚽", "Golden Fish": "🐟💛",
+    "Lucky Charm": "🍀✨", "Fortune Bull": "🐂💰", "Dragon Palace": "🐉🏯",
+    "Tiger King": "🐯👑", "Ocean King": "🌊👑", "Lucky Dragon": "🐉🍀",
+    "Caishen Riches": "🧧💰", "Dragon Gold": "🐉💛", "Fortune Wheel": "🎡💰",
+    "Hi-Lo": "🃏⬆️", "Keno": "🎯🔢",
+    "Wild Tiger": "🐯⚡", "Bonanza Billion": "💎💰", "Fruit Million": "🍎🎰",
+    "Burning Chilli X": "🌶️🔥", "Wild Clusters": "🍇✨",
+    "777 Strike": "7️⃣🎰", "Aztec Fire": "🔥🏺", "Cash Bonanza": "💰🎊",
+    "Fire and Gold": "🔥💛", "Lucky Piggy": "🐷🍀",
+    "Book of Aztec": "📖🏺", "Twerk": "💃🎵", "Satoshi's Secret": "💻🔐",
+    "Fruitmania": "🍓🎰", "Vegas Nights": "🌃🎲",
+    "Solar Queen": "☀️👑", "Book of Gold": "📖💛", "Burning Wins": "🔥🏆",
+    "Pearl River": "💧🐲", "Legend of Cleopatra": "👸🏺",
+    "Wanted Dead or a Wild": "🤠🔫", "Stick Em": "🎯💥", "Chaos Crew": "🦹💣",
+    "Cubes": "🧊⚡", "Pizza Pays": "🍕💰",
+    "Hot Triple Sevens": "7️⃣🔥", "Candy Boom": "🍬💥", "Gold Express": "🚂💛",
+    "Mighty Kong": "🦍💪", "Book of Tattoo": "📖🎨",
+    "Mega Moolah": "🦁💰", "Thunderstruck II": "⚡🔨", "Immortal Romance": "🧛💕",
+    "Break da Bank Again": "🏦💥", "Avalon II": "⚔️🏰", "Jurassic World": "🦕🌿",
+    "Agent Jane Blonde": "🕵️💋", "Mermaids Millions": "🧜💎",
+    "Thunderstruck Wild Lightning": "⚡🌩️", "Lucky Twins": "🐉🐉",
+    "Aztec Gold": "🏺💛", "Book of Egypt": "📖🐱", "Cleopatra Jewels": "👸💎",
+    "Lucky Farm": "🌾🍀", "Pirate Gold": "🏴‍☠️💛", "Magic Forest": "🌲✨",
+    "Safari Heat": "🦁🔥", "Thai Flower": "🌸💐", "Wolf Moon": "🐺🌙",
+    "Panda Panda": "🐼🎋", "Lucky Panda": "🐼🍀", "Panda Gold": "🐼💛",
+    "Ox Fortune": "🐂💰", "Mouse Fortune": "🐭💰", "Rabbit Fortune": "🐰💰",
+    "Tiger Fortune": "🐯💰", "Dragon Fortune": "🐉💰",
+    "Book of Ra": "📖☀️", "Lucky Lady's Charm": "🍀💋", "Sizzling Hot": "🔥🍒",
+    "Racing King": "🏎️🏆", "White Tiger": "🐯⬜", "Golden Koi Rise": "🐟💛",
+    "Plinko UFO": "🛸💰", "Football Strike": "⚽🎯",
+    "Lucky Dragons": "🐉🍀", "Fortune Fish": "🐟💰", "Golden Wheel": "🎡💛",
+    "Tiger Boom": "🐯💥", "Phoenix Rise": "🦅🔥", "Wild Panda": "🐼🌿",
+    "Gold Rush": "⛏️💛", "Ocean Dragon": "🌊🐉",
+    "Buffalo Thunder": "🦬⚡", "Aztec Temple": "🏺🌿", "Viking Glory": "⚔️🛡️",
+    "Revenge of Medusa": "🐍👑", "Pirate's Revenge": "🏴‍☠️⚔️",
+    "Viking's Revenge": "⚔️🔥", "Dragon's Revenge": "🐉💢", "Warrior's Revenge": "⚔️💪",
+    "Penalty Shootout": "⚽🥅", "Virtual Horse Racing": "🏇🏆",
+    "Golden Tiger": "🐯💛", "Lucky Coins": "🪙🍀",
+    "Lucky Sevens": "7️⃣✨", "Wild West": "🤠🌵",
+    "Devil Fire Twins": "😈🔥", "Bone Fortune": "💀🎰", "Fortune Hook Boom": "🎣💥",
+    "Fortune Hook": "🎣", "Lucky Jaguar 500": "🐆", "Money Pot": "🍀💰",
+    "Pirate Queen 2": "🏴‍☠️👑", "Caribbean Queen": "🌊👑", "Poseidon": "🔱",
+    "Monkey Boom": "🐒💥", "Cybercats 500x": "🤖🐱", "Hamsta": "🐹",
+    "Athens Megaways": "🏛️", "Bass Boss": "🐟👑", "Cake and Ice Cream": "🎂🍦",
+    "Clover Craze": "🍀", "God Hand": "🙏⚡", "Infinity Tower": "🗼♾️",
+    "Rise of the Mighty Gods": "⚡👑", "Magic Ace": "🃏✨", "Mjolnir": "⚡🔨",
+    "Prosperity Tiger": "🐯💰", "Treasure Bowl": "🏺💎", "Alibaba's Cave": "🪔💰",
+    "Cash Mania": "💵🎰", "Doomsday Rampage": "💥🌋", "Double Fortune": "🍀🍀",
+    "Forbidden Alchemy": "⚗️🔮", "Fortune Ganesha": "🐘🙏", "Inferno Mayhem": "🔥💀",
+    "Eternal Kiss": "💋🌹", "Electro Fiesta": "⚡🎉", "Halloween Meow": "🎃🐱",
+    "Magic Scroll": "📜✨", "Futebol Fever": "⚽🔥", "Joker Coins": "🃏🪙",
+    "Cowboys": "🤠🌵", "Chihuahua": "🐕", "Elves Town": "🧝🏘️",
+    "Bank Robbers": "🏦🦹", "Golden Genie": "🧞💛", "Poker Win": "♠️💰",
 }
 
 LISTA_JOGOS = list(JOGOS.keys())
+
+enviados = {}
 
 
 def gerar_mensagem(nome_jogo):
@@ -327,7 +150,7 @@ def gerar_mensagem(nome_jogo):
 🎮 {nome_jogo} {emoji}
 
 {separador}
-📊 ESTRATÉGIA DO DIA:
+📊 ESTRATÉGIA:
 {estrategia}
 {separador}
 
@@ -340,10 +163,8 @@ def gerar_escala_diaria():
     random.seed(data_hoje)
     jogos = LISTA_JOGOS.copy()
     random.shuffle(jogos)
-
     total = len(jogos)
 
-    # Dia 04/04/2026 começa às 13:00 — demais dias distribuem nas 24h
     if data_hoje == "2026-04-04":
         minuto_inicio = 13 * 60
         minutos_disponiveis = (24 * 60) - minuto_inicio
@@ -352,7 +173,6 @@ def gerar_escala_diaria():
         minutos_disponiveis = 24 * 60
 
     intervalo = minutos_disponiveis // total
-
     escala = []
     for i, jogo in enumerate(jogos):
         minuto_total = minuto_inicio + (i * intervalo) + random.randint(0, max(1, intervalo - 1))
@@ -366,19 +186,12 @@ def gerar_escala_diaria():
     return escala
 
 
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS enviados (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        data TEXT NOT NULL,
-        jogo TEXT NOT NULL,
-        horario TEXT NOT NULL
-    )""")
-    conn.commit()
-    conn.close()
+def ja_enviado(data, jogo, horario):
+    return enviados.get(f"{data}_{jogo}_{horario}", False)
 
-init_db()
+
+def registrar_envio(data, jogo, horario):
+    enviados[f"{data}_{jogo}_{horario}"] = True
 
 
 def enviar_telegram(texto):
@@ -387,28 +200,10 @@ def enviar_telegram(texto):
         return
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        data = {"chat_id": CHAT_ID, "text": texto}
-        resultado = requests.post(url, data=data, timeout=30)
+        resultado = requests.post(url, data={"chat_id": CHAT_ID, "text": texto}, timeout=30)
         print(f"Telegram respondeu: {resultado.status_code}")
     except Exception as e:
         print(f"Erro ao enviar: {e}")
-
-
-def ja_enviado(data, jogo, horario):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT id FROM enviados WHERE data=? AND jogo=? AND horario=?", (data, jogo, horario))
-    existe = c.fetchone()
-    conn.close()
-    return existe is not None
-
-
-def registrar_envio(data, jogo, horario):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT INTO enviados (data, jogo, horario) VALUES (?, ?, ?)", (data, jogo, horario))
-    conn.commit()
-    conn.close()
 
 
 HTML = """
@@ -445,7 +240,6 @@ HTML = """
     <h1>👑 Painel Rainha Games</h1>
     <p class="sub">Sistema 100% automático — zero configuração manual!</p>
     <div class="hora-box">🕐 Horário atual Brasil: {{ agora }}</div>
-
     <div class="stats">
         <div class="stat">
             <div class="stat-num">{{ total_jogos }}</div>
@@ -460,13 +254,11 @@ HTML = """
             <div class="stat-label">⏳ Pendentes hoje</div>
         </div>
     </div>
-
     <div class="info-box">
         <strong style="color:#f5c542;">🤖 Sistema Automático Ativo</strong>
         <p>{{ total_jogos }} jogos distribuídos automaticamente nas 24 horas.<br>
         Horários e estratégias mudam sozinhos todo dia. Nenhuma ação necessária!</p>
     </div>
-
     <div class="card">
         <h2>📅 Escala de hoje — {{ data_hoje }}</h2>
         <table>
@@ -493,36 +285,31 @@ def painel():
     agora = agora_dt.strftime("%H:%M")
     data_hoje = agora_dt.strftime("%Y-%m-%d")
     escala_raw = gerar_escala_diaria()
-
     escala = []
+    enviados_count = 0
     proximo_marcado = False
     for jogo, horario in escala_raw:
-        enviado = ja_enviado(data_hoje, jogo, horario)
+        env = ja_enviado(data_hoje, jogo, horario)
+        if env:
+            enviados_count += 1
         proximo = False
-        if not enviado and not proximo_marcado and horario >= agora:
+        if not env and not proximo_marcado and horario >= agora:
             proximo = True
             proximo_marcado = True
         escala.append({
             "horario": horario,
             "jogo": jogo,
             "emoji": JOGOS.get(jogo, "🎰"),
-            "enviado": enviado,
+            "enviado": env,
             "proximo": proximo,
         })
-
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT COUNT(*) FROM enviados WHERE data=?", (data_hoje,))
-    enviados_hoje = c.fetchone()[0]
-    conn.close()
-
     return render_template_string(HTML,
         agora=agora,
         data_hoje=data_hoje,
         escala=escala,
         total_jogos=len(LISTA_JOGOS),
-        enviados_hoje=enviados_hoje,
-        pendentes_hoje=len(LISTA_JOGOS) - enviados_hoje
+        enviados_hoje=enviados_count,
+        pendentes_hoje=len(LISTA_JOGOS) - enviados_count
     )
 
 
@@ -532,14 +319,12 @@ def verificar_e_enviar():
         hora_atual = agora.strftime("%H:%M")
         data_hoje = agora.strftime("%Y-%m-%d")
         escala = gerar_escala_diaria()
-
         for jogo, horario in escala:
             if horario == hora_atual and not ja_enviado(data_hoje, jogo, horario):
                 texto = gerar_mensagem(jogo)
                 enviar_telegram(texto)
                 registrar_envio(data_hoje, jogo, horario)
                 print(f"Enviado: {jogo} às {horario}")
-
         time.sleep(20)
 
 
