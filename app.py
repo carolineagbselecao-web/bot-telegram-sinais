@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 import os
 import requests
 import secrets
+import json
 from functools import wraps
 
 # =========================================================
@@ -27,7 +28,6 @@ app.secret_key = SECRET_KEY
 
 # =========================================================
 # CATÁLOGO INICIAL
-# Você pode adicionar mais pelo painel admin sem mexer no código.
 # =========================================================
 SEED_GAMES = [
     # PG SOFT
@@ -59,7 +59,6 @@ SEED_GAMES = [
     ("Crypto Gold", "PG Soft", "96.12%", "₿"),
     ("Safari Wilds", "PG Soft", "96.31%", "🦁"),
     ("Jurassic Kingdom", "PG Soft", "96.18%", "🦖"),
-    ("Cleopatra", "PG Soft", "96.24%", "🏺"),
     ("Rise of Apollo", "PG Soft", "96.20%", "⚡"),
     ("Totem Wonders", "PG Soft", "96.71%", "🗿"),
     ("Opera Dynasty", "PG Soft", "96.52%", "🎭"),
@@ -67,6 +66,13 @@ SEED_GAMES = [
     ("Ninja vs Samurai", "PG Soft", "97.44%", "⚔️"),
     ("Legend of Perseus", "PG Soft", "96.31%", "🛡️"),
     ("Legend of Hou Yi", "PG Soft", "96.95%", "🏹"),
+    ("Lucky Neko", "PG Soft", "96.73%", "🐱"),
+    ("Lucky Piggy", "PG Soft", "96.44%", "🐷"),
+    ("Leprechaun Riches", "PG Soft", "97.35%", "🍀"),
+    ("Shark Bounty", "PG Soft", "96.71%", "🦈"),
+    ("Wings of Iguazu", "PG Soft", "96.29%", "🦜"),
+    ("Yakuza Honor", "PG Soft", "96.11%", "🕴️"),
+    ("Zombie Outbreak", "PG Soft", "96.20%", "🧟"),
 
     # PRAGMATIC PLAY
     ("Gates of Olympus", "Pragmatic Play", "96.50%", "⚡"),
@@ -99,11 +105,9 @@ SEED_GAMES = [
     ("Buffalo King Untamed", "Pragmatic Play", "96.50%", "🦬"),
     ("Great Rhino", "Pragmatic Play", "95.97%", "🦏"),
     ("Great Rhino Megaways", "Pragmatic Play", "96.58%", "🦏"),
-    ("Great Rhino Deluxe", "Pragmatic Play", "96.50%", "🦏"),
     ("Extra Juicy", "Pragmatic Play", "96.50%", "🍉"),
     ("Extra Juicy Megaways", "Pragmatic Play", "96.52%", "🍉"),
     ("Juicy Fruits", "Pragmatic Play", "96.50%", "🍓"),
-    ("Juicy Fruits Multihold", "Pragmatic Play", "96.50%", "🍓"),
     ("Hot Fiesta", "Pragmatic Play", "96.08%", "🌶️"),
     ("Chili Heat", "Pragmatic Play", "96.50%", "🌶️"),
     ("Release the Kraken", "Pragmatic Play", "96.50%", "🐙"),
@@ -114,32 +118,13 @@ SEED_GAMES = [
     ("5 Lions Megaways", "Pragmatic Play", "96.50%", "🦁"),
     ("Aztec Gems", "Pragmatic Play", "96.50%", "🏺"),
     ("Aztec Gems Deluxe", "Pragmatic Play", "96.50%", "🏺"),
-    ("John Hunter and the Tomb of the Scarab Queen", "Pragmatic Play", "96.50%", "🏺"),
-    ("John Hunter and the Aztec Treasure", "Pragmatic Play", "96.50%", "🏺"),
     ("Wild West Gold", "Pragmatic Play", "96.51%", "🤠"),
     ("Wild West Gold Megaways", "Pragmatic Play", "96.54%", "🤠"),
     ("Pirate Gold", "Pragmatic Play", "96.50%", "🏴‍☠️"),
     ("Queen of Gold", "Pragmatic Play", "96.50%", "👑"),
     ("Emerald King", "Pragmatic Play", "96.50%", "💎"),
-    ("Rise of Samurai", "Pragmatic Play", "96.50%", "🗾"),
-    ("Greek Gods", "Pragmatic Play", "96.50%", "🏛️"),
-    ("Hercules and Pegasus", "Pragmatic Play", "96.50%", "🐎"),
-    ("Candy Stars", "Pragmatic Play", "96.50%", "🍬"),
-    ("Diamond Strike", "Pragmatic Play", "96.50%", "💎"),
-    ("Book of Kingdoms", "Pragmatic Play", "96.50%", "📖"),
-    ("Book of Tut", "Pragmatic Play", "96.50%", "📖"),
-    ("Book of Aztec", "Pragmatic Play", "96.50%", "📖"),
-    ("Queen of Atlantis", "Pragmatic Play", "96.50%", "🌊"),
-    ("Vikings Unleashed", "Pragmatic Play", "96.50%", "🛡️"),
     ("Cyber Heist", "Pragmatic Play", "96.50%", "🤖"),
     ("Spaceman", "Pragmatic Play", "96.50%", "🚀"),
-    ("Alien Nights", "Pragmatic Play", "96.50%", "👽"),
-    ("Neon Dreams", "Pragmatic Play", "96.50%", "🌆"),
-    ("Robo Cash", "Pragmatic Play", "96.50%", "🤖"),
-    ("Quantum Rush", "Pragmatic Play", "96.50%", "⚛️"),
-    ("Rise of Giza", "Pragmatic Play", "96.50%", "🏺"),
-    ("Eye of Anubis", "Pragmatic Play", "96.50%", "🐺"),
-    ("Pharaoh's Fortune", "Pragmatic Play", "96.50%", "👑"),
     ("Zeus Unleashed", "Pragmatic Play", "96.50%", "⚡"),
     ("Hades Inferno", "Pragmatic Play", "96.50%", "🔥"),
 
@@ -224,52 +209,46 @@ SEED_GAMES = [
     ("Fire My Laser", "Hacksaw", "96.30%", "🔫"),
 
     # RECTANGLE
+    ("Solar Pong", "Rectangle", "96.00%", "🌞"),
+    ("Swaggy Caramelo", "Rectangle", "96.00%", "🐶"),
+    ("Swaggy Prize", "Rectangle", "96.00%", "🎁"),
+    ("The Lone Fireball", "Rectangle", "96.00%", "🔥"),
+    ("The Lucky Year", "Rectangle", "96.00%", "🧧"),
+    ("Tinkering Box", "Rectangle", "96.00%", "📦"),
+    ("Topfly Pirates Treasure", "Rectangle", "96.00%", "🏴‍☠️"),
+    ("Treasures of Hades", "Rectangle", "96.00%", "🔥"),
+    ("Wheel of Wealth", "Rectangle", "96.00%", "🎡"),
+    ("Year of the Golden Horse", "Rectangle", "96.00%", "🐎"),
     ("Prosperity Dragon", "Rectangle", "96.00%", "🐉"),
     ("Prosperity Horse", "Rectangle", "96.00%", "🐎"),
     ("Prosperity Mouse", "Rectangle", "96.00%", "🐭"),
     ("Prosperity Ox", "Rectangle", "96.00%", "🐂"),
     ("Prosperity Rabbit", "Rectangle", "96.00%", "🐰"),
     ("Prosperity Tiger", "Rectangle", "96.00%", "🐯"),
-    ("Prosperity Clash", "Rectangle", "96.00%", "⚔️"),
+    ("Realm of Thunder", "Rectangle", "96.00%", "⚡"),
+    ("Rudolph's Gifts", "Rectangle", "96.00%", "🎅"),
+    ("Semana Santa Treasures", "Rectangle", "96.00%", "✝️"),
+    ("Shapes of Fortune", "Rectangle", "96.00%", "🔺"),
+    ("Shapes of Fortune Xmas", "Rectangle", "96.00%", "🎄"),
+    ("Smash Fury", "Rectangle", "96.00%", "💥"),
     ("Lucky Duck", "Rectangle", "96.00%", "🦆"),
     ("Lucky Fox", "Rectangle", "96.00%", "🦊"),
     ("Lucky Panda", "Rectangle", "96.00%", "🐼"),
     ("Lucky Snake", "Rectangle", "96.00%", "🐍"),
     ("Lucky Turtle", "Rectangle", "96.00%", "🐢"),
+    ("Money Mania", "Rectangle", "96.00%", "💸"),
+    ("Piggy Mines", "Rectangle", "96.00%", "🐷"),
+    ("Prosperity Clash", "Rectangle", "96.00%", "⚔️"),
+    ("Golden Koi Trail", "Rectangle", "96.00%", "🐟"),
     ("Fiesta Green", "Rectangle", "96.00%", "💚"),
     ("Fiesta Magenta", "Rectangle", "96.00%", "💜"),
     ("Fiesta Red", "Rectangle", "96.00%", "❤️"),
     ("Fiesta Blue", "Rectangle", "96.00%", "💙"),
-    ("Money Mania", "Rectangle", "96.00%", "💸"),
-    ("Piggy Mines", "Rectangle", "96.00%", "🐷"),
     ("Fortune Pig", "Rectangle", "96.00%", "🐷"),
     ("Gold Diggers", "Rectangle", "96.00%", "💰"),
-    ("Golden Koi Trail", "Rectangle", "96.00%", "🐟"),
-    ("Solar Pong", "Rectangle", "96.00%", "🌞"),
-    ("Tinkering Box", "Rectangle", "96.00%", "📦"),
-    ("Shapes of Fortune", "Rectangle", "96.00%", "🔺"),
-    ("Shapes of Fortune Xmas", "Rectangle", "96.00%", "🎄"),
-    ("Smash Fury", "Rectangle", "96.00%", "💥"),
-    ("Treasures of Hades", "Rectangle", "96.00%", "🔥"),
-    ("Realm of Thunder", "Rectangle", "96.00%", "⚡"),
     ("Iron Valor", "Rectangle", "96.00%", "🤖"),
-    ("Dragon Crash", "Rectangle", "96.00%", "🐉"),
     ("Aztec's Mystery", "Rectangle", "96.00%", "🏺"),
-    ("Swaggy Caramelo", "Rectangle", "96.00%", "🐶"),
-    ("Swaggy Prize", "Rectangle", "96.00%", "🎁"),
-    ("Lucky Caramelo", "Rectangle", "96.00%", "🐶"),
-    ("Lucky Caramelo 1000", "Rectangle", "96.00%", "🚀"),
-    ("The Lone Fireball", "Rectangle", "96.00%", "🔥"),
-    ("The Lucky Year", "Rectangle", "96.00%", "🧧"),
-    ("Wheel of Wealth", "Rectangle", "96.00%", "🎡"),
-    ("Topfly Pirates Treasure", "Rectangle", "96.00%", "🏴‍☠️"),
-    ("Pirate's Treasure Reel", "Rectangle", "96.00%", "🏴‍☠️"),
-    ("Pisces Realm of Fortune", "Rectangle", "96.00%", "♓"),
-    ("Semana Santa Treasures", "Rectangle", "96.00%", "✝️"),
-    ("Rudolph's Gifts", "Rectangle", "96.00%", "🎅"),
-    ("Firecrackers Fortune", "Rectangle", "96.00%", "🎆"),
-    ("Firecrackers Fortune 100", "Rectangle", "96.00%", "💯"),
-    ("Aquarius Fortune Wheel", "Rectangle", "96.00%", "♒"),
+    ("Dragon Crash", "Rectangle", "96.00%", "🐉"),
     ("Battle Ship", "Rectangle", "96.00%", "🚢"),
     ("Black Assassin", "Rectangle", "96.00%", "🗡️"),
     ("Capricorn's Fortune", "Rectangle", "96.00%", "♑"),
@@ -280,17 +259,17 @@ SEED_GAMES = [
 
     # REVENGE
     ("Fortune Mouse 2", "Revenge", "96.00%", "🐭"),
+    ("Treasures of Aztec Rewind", "Revenge", "96.00%", "🏺"),
     ("Fortune Tiger 2", "Revenge", "96.00%", "🐯"),
+    ("Super Dragon Hatch", "Revenge", "96.00%", "🐉"),
     ("Fortune Dragon 2", "Revenge", "96.00%", "🐉"),
+    ("Dragon Hatch Reborn", "Revenge", "96.00%", "🐉"),
     ("Fortune Ox 2", "Revenge", "96.00%", "🐂"),
     ("Fortune Chicken", "Revenge", "96.00%", "🐔"),
     ("Fortune Monkey", "Revenge", "96.00%", "🐒"),
     ("Fortune Horse", "Revenge", "96.00%", "🐎"),
     ("Fortune Dog", "Revenge", "96.00%", "🐶"),
     ("Fortune Goat", "Revenge", "96.00%", "🐐"),
-    ("Super Dragon Hatch", "Revenge", "96.00%", "🐉"),
-    ("Dragon Hatch Reborn", "Revenge", "96.00%", "🐉"),
-    ("Treasures of Aztec Rewind", "Revenge", "96.00%", "🏺"),
 ]
 
 # =========================================================
@@ -410,16 +389,7 @@ def init_db():
         )
     """)
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS system_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            kind TEXT UNIQUE NOT NULL,
-            content TEXT NOT NULL
-        )
-    """)
-
-    # seed settings
-    seed_setting(cur, "active_from_time", "14:25")
+    seed_setting(cur, "active_from_time", "17:10")
     seed_setting(cur, "brand_name", "Rainha Games")
     seed_setting(cur, "footer_text", "A Rainha Joga aqui:")
     seed_setting(cur, "footer_link", "https://beacons.ai/rainhagames")
@@ -428,12 +398,10 @@ def init_db():
     seed_setting(cur, "theme_dark", "#0B0B0F")
     seed_setting(cur, "send_interval_seconds", "20")
 
-    # seed plans
     seed_plan(cur, "Free", "R$ 0,00", "Acesso básico ao painel|Catálogo básico|Tema padrão")
     seed_plan(cur, "VIP", "R$ 97,00", "Mais jogos|Mais templates|Ajustes avançados")
     seed_plan(cur, "Premium", "R$ 297,00", "White label|Personalização total|Área admin + cliente")
 
-    # seed admin
     now = now_br_str()
     cur.execute("SELECT id FROM users WHERE username = ?", (DEFAULT_ADMIN_USER,))
     if not cur.fetchone():
@@ -442,7 +410,6 @@ def init_db():
             VALUES (?, ?, 'admin', 'Premium', 'Rainha Games', ?)
         """, (DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASSWORD, now))
 
-    # seed templates
     cur.execute("SELECT id FROM templates WHERE name = 'Entrada Premium'")
     if not cur.fetchone():
         cur.execute("""
@@ -475,17 +442,11 @@ def init_db():
             now
         ))
 
-    # seed schedules
     existing = cur.execute("SELECT COUNT(*) AS total FROM schedules").fetchone()["total"]
     if existing == 0:
-        for t in ["14:25", "15:40", "17:10", "18:30", "20:00", "21:20", "22:40"]:
+        for t in ["17:10", "18:30", "20:00", "21:20", "22:40"]:
             cur.execute("INSERT INTO schedules (send_time, active) VALUES (?, 1)", (t,))
 
-    # seed system messages
-    seed_system_message(cur, "welcome", "Bem-vinda ao painel premium da Rainha Games 👑")
-    seed_system_message(cur, "responsible", "Jogue com responsabilidade. Slots são aleatórios e não garantem resultado.")
-
-    # seed games
     for name, provider, rtp, emoji in SEED_GAMES:
         cur.execute("SELECT id FROM games WHERE name = ?", (name,))
         if not cur.fetchone():
@@ -506,11 +467,6 @@ def seed_plan(cur, name, price, features):
     cur.execute("SELECT id FROM plans WHERE name = ?", (name,))
     if not cur.fetchone():
         cur.execute("INSERT INTO plans (name, price, features, active) VALUES (?, ?, ?, 1)", (name, price, features))
-
-def seed_system_message(cur, kind, content):
-    cur.execute("SELECT id FROM system_messages WHERE kind = ?", (kind,))
-    if not cur.fetchone():
-        cur.execute("INSERT INTO system_messages (kind, content) VALUES (?, ?)", (kind, content))
 
 # =========================================================
 # HELPERS
@@ -566,19 +522,33 @@ def telegram_send(text, image_url=""):
     if not TOKEN or not CHAT_ID:
         return False, "TOKEN ou CHAT_ID não configurados."
 
+    footer_link = get_setting("footer_link", "https://beacons.ai/rainhagames")
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "👑 A RAINHA JOGA AQUI",
+                    "url": footer_link
+                }
+            ]
+        ]
+    }
+
     try:
         if image_url.strip():
             url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
             data = {
                 "chat_id": CHAT_ID,
                 "photo": image_url.strip(),
-                "caption": text[:1024]
+                "caption": text[:1024],
+                "reply_markup": json.dumps(keyboard)
             }
         else:
             url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
             data = {
                 "chat_id": CHAT_ID,
-                "text": text
+                "text": text,
+                "reply_markup": json.dumps(keyboard)
             }
 
         resp = requests.post(url, data=data, timeout=30)
@@ -590,8 +560,6 @@ def telegram_send(text, image_url=""):
 def build_message(game_row, template_row):
     strategy_level = template_row["strategy_level"].lower().strip()
     strategy_text = PREMIUM_STRATEGIES.get(strategy_level, PREMIUM_STRATEGIES["leve"])
-    footer_text = template_row["footer_text"].strip() or get_setting("footer_text", "A Rainha Joga aqui:")
-    footer_link = template_row["footer_link"].strip() or get_setting("footer_link", "https://beacons.ai/rainhagames")
 
     provider_line = f"🏢 Provedora: {game_row['provider']}\n" if game_row["provider"] else ""
     rtp_line = f"📊 RTP: {game_row['rtp']}\n" if game_row["rtp"] else "📊 RTP: Verificado ✅\n"
@@ -602,13 +570,8 @@ def build_message(game_row, template_row):
 {provider_line}{rtp_line}
 {strategy_text}
 
-⚠️ Operação informativa. Slots são aleatórios. Use gestão e responsabilidade.
-
-━━━━━━━━━━━━━━━
-{footer_text}
-{footer_link}
-━━━━━━━━━━━━━━━"""
-
+⚠️ Operação informativa. Slots são aleatórios. Use gestão e responsabilidade."""
+    
 def get_rotated_schedules():
     conn = db()
     rows = conn.execute("SELECT send_time FROM schedules WHERE active = 1 ORDER BY send_time").fetchall()
@@ -625,7 +588,6 @@ def get_rotated_schedules():
 def choose_next_game_and_template():
     conn = db()
 
-    # template ativo
     template_row = conn.execute("""
         SELECT * FROM templates
         WHERE active = 1
@@ -637,7 +599,6 @@ def choose_next_game_and_template():
         conn.close()
         return None, None
 
-    # jogo com rotação simples usando data + total enviados do dia
     sent_today = conn.execute("""
         SELECT COUNT(*) AS total FROM sent_log WHERE send_date = ?
     """, (today_str(),)).fetchone()["total"]
@@ -682,7 +643,7 @@ def log_send(send_time, template_id, game_id, status, response):
 def scheduler_loop():
     while True:
         try:
-            active_from = get_setting("active_from_time", "14:25")
+            active_from = get_setting("active_from_time", "17:10")
             interval_seconds = int(get_setting("send_interval_seconds", "20") or "20")
             now_time = current_time_str()
 
@@ -811,14 +772,6 @@ button, .btn{
     text-decoration:none;
     display:inline-block;
 }
-.btn-dark{
-    background:rgba(255,255,255,.08);
-    color:#fff;
-}
-.btn-danger{
-    background:linear-gradient(180deg, #ff8484 0%, #db3c3c 100%);
-    color:#fff;
-}
 .table-wrap{
     overflow:auto;
 }
@@ -844,7 +797,6 @@ th{
     font-weight:700;
 }
 .badge-success{ background:rgba(57,217,138,.12); color:var(--success);}
-.badge-danger{ background:rgba(255,94,94,.12); color:var(--danger);}
 .badge-gold{ background:rgba(212,175,55,.12); color:var(--secondary);}
 .flash{
     margin-bottom:16px;
@@ -858,11 +810,6 @@ th{
     padding:16px;
     border-radius:18px;
     border:1px solid rgba(212,175,55,.14);
-}
-.footer-note{
-    margin-top:18px;
-    color:#cfcfcf;
-    font-size:13px;
 }
 @media (max-width: 980px){
     .grid-2, .grid-3{
@@ -954,7 +901,6 @@ def login():
                 <input name="password" type="password" placeholder="Digite sua senha" required>
                 <button type="submit">Entrar</button>
             </form>
-            <div class="footer-note">Tema premium, multiusuário, admin e cliente, white label e painel completo.</div>
         </div>
     </div>
     """
@@ -977,7 +923,6 @@ def dashboard():
     total_users = conn.execute("SELECT COUNT(*) AS total FROM users WHERE is_active = 1").fetchone()["total"]
     sent_today = conn.execute("SELECT COUNT(*) AS total FROM sent_log WHERE send_date = ?", (today_str(),)).fetchone()["total"]
     last_log = conn.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 1").fetchone()
-    current_template = conn.execute("SELECT * FROM templates WHERE active = 1 ORDER BY id ASC LIMIT 1").fetchone()
     current_game, current_template_for_preview = choose_next_game_and_template()
     conn.close()
 
@@ -986,8 +931,7 @@ def dashboard():
         preview = build_message(current_game, current_template_for_preview)
 
     schedules = ", ".join(get_rotated_schedules()) or "Nenhum horário ativo"
-    active_from = get_setting("active_from_time", "14:25")
-    responsible = "Jogue com responsabilidade. Slots são aleatórios."
+    active_from = get_setting("active_from_time", "17:10")
 
     html = f"""
     <div class="grid grid-3">
@@ -1035,8 +979,8 @@ def dashboard():
     </div>
 
     <div class="card" style="margin-top:18px;">
-        <h3>Resumo premium</h3>
-        <div class="preview">Sistema rodando 24h, sem parar, com envio automático no Telegram, painel multiusuário, plano de vendas, estratégias premium com variações leve, média e agressiva, RTP aparecendo, rodapé com link e catálogo inicial robusto. {responsible}</div>
+        <h3>Ações rápidas</h3>
+        <a class="btn" href="/admin/test-send">Enviar teste agora</a>
     </div>
     """
     return render_page("Painel", html)
@@ -1065,7 +1009,6 @@ def sales_plans():
     html = f"""
     <div class="card">
         <h2>Plano de vendas</h2>
-        <div class="sub">Multiusuário, login admin e cliente, white label e personalização total.</div>
     </div>
     <div class="grid grid-3" style="margin-top:18px;">
         {cards}
@@ -1321,9 +1264,9 @@ def admin_templates():
                     <option value="media" selected>Média</option>
                     <option value="agressiva">Agressiva</option>
                 </select>
-                <label>Texto do rodapé</label>
+                <label>Texto do botão</label>
                 <input name="footer_text" value="A Rainha Joga aqui:">
-                <label>Link do rodapé</label>
+                <label>Link do botão</label>
                 <input name="footer_link" value="https://beacons.ai/rainhagames">
                 <label>URL da imagem opcional</label>
                 <input name="image_url">
@@ -1340,7 +1283,7 @@ def admin_templates():
                             <th>ID</th>
                             <th>Nome</th>
                             <th>Estratégia</th>
-                            <th>Rodapé</th>
+                            <th>Botão</th>
                             <th>Imagem</th>
                             <th>Status</th>
                         </tr>
@@ -1389,10 +1332,9 @@ def admin_schedules():
             <h2>Novo horário</h2>
             <form method="post">
                 <label>Horário</label>
-                <input name="send_time" placeholder="14:25" required>
+                <input name="send_time" placeholder="17:10" required>
                 <button type="submit">Salvar horário</button>
             </form>
-            <div class="footer-note">Os horários giram automaticamente a cada dia.</div>
         </div>
         <div class="card">
             <h2>Horários cadastrados</h2>
@@ -1424,7 +1366,7 @@ def admin_settings():
         set_setting("brand_name", request.form.get("brand_name", "Rainha Games").strip() or "Rainha Games")
         set_setting("footer_text", request.form.get("footer_text", "A Rainha Joga aqui:").strip() or "A Rainha Joga aqui:")
         set_setting("footer_link", request.form.get("footer_link", "https://beacons.ai/rainhagames").strip() or "https://beacons.ai/rainhagames")
-        set_setting("active_from_time", request.form.get("active_from_time", "14:25").strip() or "14:25")
+        set_setting("active_from_time", request.form.get("active_from_time", "17:10").strip() or "17:10")
         set_setting("theme_primary", request.form.get("theme_primary", "#B3001B").strip() or "#B3001B")
         set_setting("theme_secondary", request.form.get("theme_secondary", "#D4AF37").strip() or "#D4AF37")
         set_setting("theme_dark", request.form.get("theme_dark", "#0B0B0F").strip() or "#0B0B0F")
@@ -1439,14 +1381,14 @@ def admin_settings():
             <label>Nome da marca</label>
             <input name="brand_name" value="{get_setting('brand_name', 'Rainha Games')}">
 
-            <label>Texto do rodapé</label>
+            <label>Texto do botão</label>
             <input name="footer_text" value="{get_setting('footer_text', 'A Rainha Joga aqui:')}">
 
-            <label>Link do rodapé</label>
+            <label>Link do botão</label>
             <input name="footer_link" value="{get_setting('footer_link', 'https://beacons.ai/rainhagames')}">
 
             <label>Início automático diário</label>
-            <input name="active_from_time" value="{get_setting('active_from_time', '14:25')}">
+            <input name="active_from_time" value="{get_setting('active_from_time', '17:10')}">
 
             <label>Intervalo do agendador em segundos</label>
             <input name="send_interval_seconds" value="{get_setting('send_interval_seconds', '20')}">
@@ -1493,3 +1435,4 @@ scheduler_thread.start()
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "10000"))
     app.run(host="0.0.0.0", port=port)
+    
