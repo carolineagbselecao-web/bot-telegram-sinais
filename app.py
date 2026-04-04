@@ -1,7 +1,7 @@
 from flask import Flask, render_template_string
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import os
 import requests
@@ -12,6 +12,10 @@ CHAT_ID = os.getenv("CHAT_ID")
 
 app = Flask(__name__)
 FUSO = pytz.timezone("America/Sao_Paulo")
+
+# HORÁRIO DE INÍCIO DO CICLO
+HORA_INICIO_CICLO = 14
+MINUTO_INICIO_CICLO = 40
 
 ESTRATEGIAS = [
     "⚡ ENTRADA CONFIRMADA — aposta baixa por 5 rodadas\n🚀 Aumente na 6ª se não saiu\n📊 Limite de 3 martingales\n💰 Stop loss: 20% da banca",
@@ -301,19 +305,35 @@ def gerar_mensagem(nome_jogo):
 {rodape}"""
 
 
-def horario_para_minutos(horario):
-    hora, minuto = horario.split(":")
-    return int(hora) * 60 + int(minuto)
+def obter_inicio_ciclo_referencia(agora):
+    inicio_hoje = FUSO.localize(
+        datetime(
+            agora.year,
+            agora.month,
+            agora.day,
+            HORA_INICIO_CICLO,
+            MINUTO_INICIO_CICLO
+        )
+    )
+
+    if agora >= inicio_hoje:
+        return inicio_hoje
+
+    return inicio_hoje - timedelta(days=1)
 
 
-def minutos_para_horario(total_minutos):
-    hora = (total_minutos // 60) % 24
-    minuto = total_minutos % 60
-    return f"{hora:02d}:{minuto:02d}"
+def obter_id_ciclo(agora):
+    inicio_ciclo = obter_inicio_ciclo_referencia(agora)
+    return inicio_ciclo.strftime("%Y-%m-%d %H:%M")
 
 
-def gerar_escala_do_dia(data_str):
-    random.seed(data_str)
+def obter_label_ciclo(inicio_ciclo):
+    fim_ciclo = inicio_ciclo + timedelta(days=1) - timedelta(minutes=1)
+    return f"{inicio_ciclo.strftime('%d/%m %H:%M')} até {fim_ciclo.strftime('%d/%m %H:%M')}"
+
+
+def gerar_escala_do_ciclo(ciclo_id, inicio_ciclo):
+    random.seed(ciclo_id)
 
     jogos = LISTA_JOGOS.copy()
     random.shuffle(jogos)
@@ -322,58 +342,67 @@ def gerar_escala_do_dia(data_str):
     if total == 0:
         return []
 
-    intervalo = 1440 / total
-    horarios_usados = set()
+    intervalo_segundos = int((24 * 60 * 60) / total)
+    usados = set()
     escala = []
 
     for i, jogo in enumerate(jogos):
-        inicio_faixa = int(i * intervalo)
-        fim_faixa = int((i + 1) * intervalo) - 1
+        inicio_faixa = i * intervalo_segundos
+        fim_faixa = ((i + 1) * intervalo_segundos) - 1
 
         if fim_faixa < inicio_faixa:
             fim_faixa = inicio_faixa
 
-        minuto_total = random.randint(inicio_faixa, fim_faixa)
+        offset = random.randint(inicio_faixa, fim_faixa)
 
-        while minuto_total in horarios_usados:
-            minuto_total = (minuto_total + 1) % 1440
+        while offset in usados:
+            offset += 1
 
-        horarios_usados.add(minuto_total)
-        horario = minutos_para_horario(minuto_total)
-        escala.append((jogo, horario))
+        usados.add(offset)
 
-    escala.sort(key=lambda x: horario_para_minutos(x[1]))
+        horario_envio = inicio_ciclo + timedelta(seconds=offset)
+        horario_envio = horario_envio.replace(second=0, microsecond=0)
+
+        escala.append((jogo, horario_envio))
+
+    escala.sort(key=lambda x: x[1])
     return escala
 
 
-def obter_escala_diaria():
-    hoje = datetime.now(FUSO).strftime("%Y-%m-%d")
+def obter_escala_ciclo():
+    agora = datetime.now(FUSO)
+    inicio_ciclo = obter_inicio_ciclo_referencia(agora)
+    ciclo_id = obter_id_ciclo(agora)
 
-    if hoje not in escala_cache:
+    if ciclo_id not in escala_cache:
         escala_cache.clear()
-        escala_cache[hoje] = gerar_escala_do_dia(hoje)
+        escala_cache[ciclo_id] = {
+            "inicio": inicio_ciclo,
+            "escala": gerar_escala_do_ciclo(ciclo_id, inicio_ciclo)
+        }
 
-    return escala_cache[hoje]
+    return ciclo_id, escala_cache[ciclo_id]["inicio"], escala_cache[ciclo_id]["escala"]
 
 
 def limpar_enviados_antigos():
-    hoje = datetime.now(FUSO).strftime("%Y-%m-%d")
+    agora = datetime.now(FUSO)
+    ciclo_atual = obter_id_ciclo(agora)
     chaves_para_remover = []
 
     for chave in enviados:
-        if not chave.startswith(f"{hoje}_"):
+        if not chave.startswith(f"{ciclo_atual}_"):
             chaves_para_remover.append(chave)
 
     for chave in chaves_para_remover:
         enviados.pop(chave, None)
 
 
-def ja_enviado(data, jogo, horario):
-    return enviados.get(f"{data}_{jogo}_{horario}", False)
+def ja_enviado(ciclo_id, jogo, horario_str):
+    return enviados.get(f"{ciclo_id}_{jogo}_{horario_str}", False)
 
 
-def registrar_envio(data, jogo, horario):
-    enviados[f"{data}_{jogo}_{horario}"] = True
+def registrar_envio(ciclo_id, jogo, horario_str):
+    enviados[f"{ciclo_id}_{jogo}_{horario_str}"] = True
 
 
 def enviar_telegram(texto):
@@ -583,33 +612,35 @@ HTML = """
             </div>
             <div class="stat">
                 <div class="stat-num" style="color:#4caf50;">{{ enviados_hoje }}</div>
-                <div class="stat-label">✅ Enviados hoje</div>
+                <div class="stat-label">✅ Enviados neste ciclo</div>
             </div>
             <div class="stat">
                 <div class="stat-num">{{ pendentes_hoje }}</div>
-                <div class="stat-label">⏳ Pendentes hoje</div>
+                <div class="stat-label">⏳ Pendentes neste ciclo</div>
             </div>
         </div>
 
         <div class="info-box">
-            <strong>🤖 Sistema 24h Ativo</strong>
+            <strong>🤖 Ciclo 24h Ativo</strong>
             <p>
-                Os jogos são distribuídos automaticamente ao longo das 24 horas do dia.<br>
-                À meia-noite a escala reinicia sozinha e continua rodando sem parar.
+                O ciclo atual começa sempre às {{ hora_inicio }} e dura 24 horas.<br>
+                Janela atual: {{ label_ciclo }}
             </p>
         </div>
 
         <div class="card">
-            <h2>📅 Escala de hoje — {{ data_hoje }}</h2>
+            <h2>📅 Escala do ciclo</h2>
             <div class="table-wrap">
                 <table>
                     <tr>
+                        <th>Data</th>
                         <th>Horário</th>
                         <th>Jogo</th>
                         <th>Status</th>
                     </tr>
                     {% for item in escala %}
                     <tr class="{{ 'proximo' if item.proximo else '' }}">
+                        <td>{{ item.data }}</td>
                         <td>{{ item.horario }}</td>
                         <td>{{ item.emoji }} {{ item.jogo }}</td>
                         <td class="{% if item.enviado %}enviado{% elif item.proximo %}status-proximo{% else %}pendente{% endif %}">
@@ -638,28 +669,29 @@ def painel():
 
     agora_dt = datetime.now(FUSO)
     agora = agora_dt.strftime("%H:%M")
-    data_hoje = agora_dt.strftime("%Y-%m-%d")
-    agora_minutos = agora_dt.hour * 60 + agora_dt.minute
 
-    escala_raw = obter_escala_diaria()
+    ciclo_id, inicio_ciclo, escala_raw = obter_escala_ciclo()
+    label_ciclo = obter_label_ciclo(inicio_ciclo)
+
     escala = []
     enviados_count = 0
     proximo_marcado = False
 
-    for jogo, horario in escala_raw:
-        horario_minutos = horario_para_minutos(horario)
-        enviado = ja_enviado(data_hoje, jogo, horario)
+    for jogo, horario_dt in escala_raw:
+        horario_str = horario_dt.strftime("%Y-%m-%d %H:%M")
+        enviado = ja_enviado(ciclo_id, jogo, horario_str)
 
         if enviado:
             enviados_count += 1
 
         proximo = False
-        if not enviado and not proximo_marcado and horario_minutos >= agora_minutos:
+        if not enviado and not proximo_marcado and horario_dt >= agora_dt:
             proximo = True
             proximo_marcado = True
 
         escala.append({
-            "horario": horario,
+            "data": horario_dt.strftime("%d/%m"),
+            "horario": horario_dt.strftime("%H:%M"),
             "jogo": jogo,
             "emoji": JOGOS.get(jogo, "🎰"),
             "enviado": enviado,
@@ -675,38 +707,38 @@ def painel():
     return render_template_string(
         HTML,
         agora=agora,
-        data_hoje=data_hoje,
         escala=escala,
         total_jogos=len(LISTA_JOGOS),
         enviados_hoje=enviados_count,
-        pendentes_hoje=len(LISTA_JOGOS) - enviados_count
+        pendentes_hoje=len(LISTA_JOGOS) - enviados_count,
+        hora_inicio=f"{HORA_INICIO_CICLO:02d}:{MINUTO_INICIO_CICLO:02d}",
+        label_ciclo=label_ciclo
     )
 
 
 def verificar_e_enviar():
-    ultimo_dia = None
+    ultimo_ciclo = None
 
     while True:
         try:
             agora = datetime.now(FUSO)
-            data_hoje = agora.strftime("%Y-%m-%d")
-            hora_atual = agora.strftime("%H:%M")
+            ciclo_id, inicio_ciclo, escala = obter_escala_ciclo()
 
-            if ultimo_dia != data_hoje:
+            if ultimo_ciclo != ciclo_id:
                 limpar_enviados_antigos()
-                escala_cache.clear()
-                obter_escala_diaria()
-                ultimo_dia = data_hoje
-                print(f"Nova escala criada para {data_hoje}")
+                ultimo_ciclo = ciclo_id
+                print(f"Novo ciclo carregado: {ciclo_id}")
 
-            escala = obter_escala_diaria()
+            hora_atual_str = agora.strftime("%Y-%m-%d %H:%M")
 
-            for jogo, horario in escala:
-                if horario == hora_atual and not ja_enviado(data_hoje, jogo, horario):
+            for jogo, horario_dt in escala:
+                horario_str = horario_dt.strftime("%Y-%m-%d %H:%M")
+
+                if horario_str == hora_atual_str and not ja_enviado(ciclo_id, jogo, horario_str):
                     texto = gerar_mensagem(jogo)
                     enviar_telegram(texto)
-                    registrar_envio(data_hoje, jogo, horario)
-                    print(f"Enviado: {jogo} às {horario}")
+                    registrar_envio(ciclo_id, jogo, horario_str)
+                    print(f"Enviado: {jogo} às {horario_str}")
 
             time.sleep(15)
 
