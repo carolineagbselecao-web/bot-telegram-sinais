@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string, redirect, url_for
+from flask import Flask, render_template_string
 import sqlite3
 import threading
 import time
@@ -11,7 +11,7 @@ import random
 TOKEN = os.getenv("TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-app = Flask(name)
+app = Flask(__name__)
 FUSO = pytz.timezone("America/Sao_Paulo")
 DB_PATH = "/tmp/database.db"
 
@@ -26,6 +26,26 @@ ESTRATEGIAS = [
     "🃏 Jogue leve nas primeiras 8 rodadas\n🚀 Force entrada na 9ª\n📊 3 martingales e pare\n🛑 Stop loss: 20%",
     "🎯 Entre após sequência de 3 perdas\n💰 Aposte 6% da banca\n🔥 Stop gain: 40%\n🛑 Stop loss: 18%",
     "⚡ Aguarde o bonus aparecer 1 vez\n🚀 Entre nas próximas 3 rodadas\n💎 Aposte 5% da banca\n🛑 Stop loss: 20%",
+    "🎲 Comece com 3% da banca\n💰 Aumente 1% a cada perda\n🏆 Pare ao atingir 25% de lucro\n🛑 Stop loss: 15%",
+    "🌙 Entrada estratégica noturna\n💎 Aposte valor fixo por 10 rodadas\n⚡ Dobre apenas na 11ª\n🛑 Stop loss: 20%",
+]
+
+CABECALHOS = [
+    "╔══════════════════╗\n🎰  SINAL CONFIRMADO  🎰\n╚══════════════════╝",
+    "🔥━━━━━━━━━━━━━━━━━🔥\n⚡   SINAL LIBERADO   ⚡\n🔥━━━━━━━━━━━━━━━━━🔥",
+    "┌─────────────────────┐\n💎     ENTRADA VIP     💎\n└─────────────────────┘",
+    "🌟══════════════════🌟\n🎯  SINAL EXCLUSIVO  🎯\n🌟══════════════════🌟",
+    "╭──────────────────────╮\n👑   RAINHA GAMES   👑\n╰──────────────────────╯",
+    "🏆▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬🏆\n💰  OPORTUNIDADE VIP  💰\n🏆▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬🏆",
+    "⚡🎰⚡🎰⚡🎰⚡🎰⚡\n🔥  ENTRADA QUENTE  🔥\n⚡🎰⚡🎰⚡🎰⚡🎰⚡",
+]
+
+RODAPES = [
+    "⚠️ Jogue com responsabilidade!\n💪 GESTÃO É TUDO!\n🔥 BORA PRA CIMA!",
+    "🛑 Respeite o stop loss!\n💡 Quem tem gestão, tem lucro!\n👑 RAINHA GAMES",
+    "⚠️ Nunca aposte mais do que pode perder!\n🚀 VAMOS COM TUDO!\n👑 RAINHA GAMES",
+    "💎 Disciplina gera resultado!\n🎯 Foco no gerenciamento!\n🔥 FORÇA TROPA!",
+    "🧠 Jogue com inteligência!\n💰 Gestão primeiro, sempre!\n👑 RAINHA GAMES",
 ]
 
 JOGOS = {
@@ -37,6 +57,11 @@ JOGOS = {
     "Fortune Ox": "🐂",
     "Fortune Horse": "🐴",
     "Fortune Snake": "🐍",
+    "Mahjong Ways": "🀄",
+    "Wild Bandito": "🤠💥",
+    "Treasures of Aztec": "🏺⚡",
+    "Candy Bonanza": "🍬💥",
+    "Leprechaun Riches": "🍀💛",
     # Pragmatic Play
     "Gates of Olympus": "⚡",
     "Sweet Bonanza": "🍬",
@@ -44,70 +69,105 @@ JOGOS = {
     "The Dog House": "🐕",
     "Starlight Princess": "⭐",
     "Sugar Rush": "🍭",
-    # Outros jogos variados
-    "Devil Fire Twins": "😈🔥",
-    "Bone Fortune": "💀",
-    "Fortune Hook Boom": "🎣💥",
-    "Fortune Hook": "🎣",
-    "Joker Coins": "🃏🪙",
-    "Lucky Jaguar 500": "🐆",
-    "Money Pot": "🍀💰",
-    "Pirate Queen 2": "🏴‍☠️👑",
-    "Caribbean Queen": "🌊👑",
-    "Poseidon": "🔱",
-    "Monkey Boom": "🐒💥",
-    "Cybercats 500x": "🤖🐱",
-    "Hamsta": "🐹",
-    "Athens Megaways": "🏛️",
-    "Bass Boss": "🐟👑",
-    "Cake and Ice Cream": "🎂🍦",
-    "Clover Craze": "🍀",
-    "Cyber Attack": "💻⚡",
-    "Dragon's Fire Megaways": "🐉🔥",
-    "God Hand Feature Buy": "🙏⚡",
-    "Infinity Tower": "🗼♾️",
-    "Rise of the Mighty Gods": "⚡👑",
-    "Dead Dear or Deader": "💀🦌",
-    "East Coast vs West Coast": "🏙️",
+    "Floating Dragon": "🐉🌊",
+    "Bigger Bass Bonanza": "🐟💰",
+    "Wild West Gold": "🤠🌵",
+    "Joker's Jewels": "🃏💎",
+    # Nolimit City
     "Fire in the Hole 3": "💣🔥",
-    "Magic Ace": "🃏✨",
-    "Mjolnir": "⚡🔨",
-    "Money Mags Man": "💰🕴️",
-    "Pop Pop Candy": "🍭💥",
-    "Prosperity Tiger": "🐯💰",
-    "Treasure Bowl": "🏺💎",
-    "Alibaba's Cave of Fortune": "🪔💰",
-    "Cash Mania": "💵🎰",
-    "Diner Delights": "🍔✨",
-    "Diner Frenzy Spins": "🍕🎰",
-    "Doomsday Rampage": "💥🌋",
-    "Double Fortune": "🍀🍀",
-    "Dragon Treasure Quest": "🐉💎",
-    "Forbidden Alchemy": "⚗️🔮",
-    "Fortune Ganesha": "🐘🙏",
-    "Graffiti Rush": "🎨💨",
-    "Hansel and Gretel": "🍬🏠",
-    "Inferno Mayhem": "🔥💀",
-    "Jack the Giant Hunter": "🪓👹",
-    "Jungle Delight": "🌿🐾",
-    "Jurassic Kingdom": "🦕👑",
-    "Golden Genie": "🧞💛",
-    "Poker Win": "♠️💰",
-    "Cowboys": "🤠",
-    "Chihuahua": "🐕",
-    "Elves Town": "🧝🏘️",
-    "Eternal Kiss": "💋🌹",
-    "Bank Robbers": "🏦🦹",
+    "San Quentin xWays": "🔒⚡",
+    "Tombstone RIP": "💀🪦",
+    "Deadwood xNudge": "🤠💀",
+    "Mental": "🧠💥",
+    "Punk Rocker": "🎸🤘",
+    "Book of Shadows": "📖🌑",
+    "Infectious 5 xWays": "🦠⚡",
+    "Folsom Prison": "🔒🏛️",
+    "Brute Force": "💪💥",
+    # Red Tiger
+    "Dragon's Fire": "🐉🔥",
+    "Rainbow Jackpots": "🌈💰",
+    "Golden Leprechaun Megaways": "🍀💛",
+    "Primate King": "🦍👑",
+    "Thor's Lightning": "⚡🔨",
+    "Pirates Plenty": "🏴‍☠️💎",
+    "Mystery Reels Megaways": "🎰✨",
+    "Vault of Anubis": "⚱️👁️",
+    "God of Wealth": "🙏💰",
+    "Ali Baba's Luck": "🪔💎",
+    # Playtech
+    "Age of the Gods": "⚡👑",
+    "Buffalo Blitz": "🦬💨",
+    "Gladiator": "⚔️🏛️",
+    "Great Blue": "🌊🐳",
+    "Heart of the Frontier": "🤠❤️",
+    "Kingdoms Rise": "⚔️🏰",
+    # Fa Chai
+    "Circus Delight": "🎪🎠",
+    "Emoji Riches": "😍💰",
+    "Wild Ape": "🦍🌴",
+    "Ninja vs Samurai": "🥷⚔️",
+    "Charge Buffalo": "🦬⚡",
+    # JDB
+    "Book of Myth": "📖🔮",
+    "Lucky Goldenfish": "🐟💛",
+    "Dragon Treasure": "🐉💎",
+    "Fishing War": "🎣⚔️",
+    "Super Bonus Slot": "🎰💥",
+    # Belatra
+    "Lucky Drink": "🍹🍀",
+    "Piggy Bank": "🐷💰",
+    "Cleo's Book": "📖👸",
     "Big Wild Buffalo": "🦬💥",
-    "Electro Fiesta": "⚡🎉",
-    "Halloween Meow": "🎃🐱",
-    "Magic Scroll": "📜✨",
-    "Futebol Fever": "⚽🔥",
+    "Dragon's Bonanza": "🐉💎",
+    "Mummyland Treasures": "⚱️🏺",
+    # Rectangle Games
+    "Tiger Gold": "🐯💛",
+    "Dragon Pearl": "🐉🔮",
+    "Lucky Fortune": "🍀💰",
+    # Spribe
+    "Aviator": "✈️💰",
+    "Plinko": "🎯💸",
+    "Mines": "💣⚠️",
+    "Dice": "🎲💰",
+    # TaDa Gaming
+    "Fishing God": "🎣🙏",
+    "Dragon Legend": "🐉✨",
+    "Lucky Koi": "🐠🍀",
+    "Golden Toad": "🐸💛",
+    "Jungle King": "🌿🦁",
+    # Turbo Games
+    "Fruit Super Nova": "🍎⭐",
+    "Lucky Wheel": "🎡🍀",
+    "Space Catcher": "🚀🎯",
+    "Coin Flip": "🪙🔄",
+    # SmartGuys
+    "Fruit Party": "🍇🎉",
+    "Lucky Stars": "⭐🍀",
+    "Ocean Fortune": "🌊💰",
+    # CP Games
+    "Dragon Ball CP": "🐉⚽",
+    "Golden Fish": "🐟💛",
+    "Lucky Charm": "🍀✨",
+    # BB Games
+    "Fortune Bull": "🐂💰",
+    "Dragon Palace": "🐉🏯",
+    # Live22
+    "Tiger King": "🐯👑",
+    "Ocean King": "🌊👑",
+    "Lucky Dragon": "🐉🍀",
+    "Caishen Riches": "🧧💰",
+    # FTG
+    "Dragon Gold": "🐉💛",
+    "Fortune Wheel": "🎡💰",
+    # OneTouch
+    "Hi-Lo": "🃏⬆️",
+    "Keno": "🎯🔢",
     # BGaming
     "Wild Tiger": "🐯⚡",
     "Bonanza Billion": "💎💰",
     "Fruit Million": "🍎🎰",
-            "Burning Chilli X": "🌶️🔥",
+    "Burning Chilli X": "🌶️🔥",
     "Wild Clusters": "🍇✨",
     # Ruby Play
     "777 Strike": "7️⃣🎰",
@@ -145,16 +205,15 @@ JOGOS = {
     "Immortal Romance": "🧛💕",
     "Break da Bank Again": "🏦💥",
     "Avalon II": "⚔️🏰",
-    "Starburst": "⭐💎",
-    "Game of Thrones Slots": "👑⚔️",
     "Jurassic World": "🦕🌿",
     "Agent Jane Blonde": "🕵️💋",
     "Mermaids Millions": "🧜💎",
+    "Thunderstruck Wild Lightning": "⚡🌩️",
+    "Lucky Twins": "🐉🐉",
     # B Gaming
     "Aztec Gold": "🏺💛",
     "Book of Egypt": "📖🐱",
     "Cleopatra Jewels": "👸💎",
-    "Dragon's Gold": "🐉💰",
     "Lucky Farm": "🌾🍀",
     "Pirate Gold": "🏴‍☠️💛",
     "Magic Forest": "🌲✨",
@@ -166,11 +225,11 @@ JOGOS = {
     "Lucky Panda": "🐼🍀",
     "Panda Gold": "🐼💛",
     # Spirit Gaming
-    "Ox Fortune Spirit": "🐂💰",
-    "Mouse Fortune Spirit": "🐭💰",
-    "Rabbit Fortune Spirit": "🐰💰",
-    "Tiger Fortune Spirit": "🐯💰",
-    "Dragon Fortune Spirit": "🐉💰",
+    "Ox Fortune": "🐂💰",
+    "Mouse Fortune": "🐭💰",
+    "Rabbit Fortune": "🐰💰",
+    "Tiger Fortune": "🐯💰",
+    "Dragon Fortune": "🐉💰",
     # Original Games
     "Book of Ra": "📖☀️",
     "Lucky Lady's Charm": "🍀💋",
@@ -182,118 +241,164 @@ JOGOS = {
     "Plinko UFO": "🛸💰",
     "Football Strike": "⚽🎯",
     # 759 Gaming
-    "Lucky Dragons 759": "🐉🍀",
-    "Fortune Fish 759": "🐟💰",
-    "Golden Wheel 759": "🎡💛",
-    "Tiger Boom 759": "🐯💥",
-    "Phoenix Rise 759": "🦅🔥",
-    "Dragon Ball 759": "🐉⚽",
-    "Lucky Koi 759": "🐠🍀",
-    "Wild Panda 759": "🐼🌿",
-    "Gold Rush 759": "⛏️💛",
-    "Ocean King 759": "🌊👑",
+    "Lucky Dragons": "🐉🍀",
+    "Fortune Fish": "🐟💰",
+    "Golden Wheel": "🎡💛",
+    "Tiger Boom": "🐯💥",
+    "Phoenix Rise": "🦅🔥",
+    "Wild Panda": "🐼🌿",
+    "Gold Rush": "⛏️💛",
+    "Ocean Dragon": "🌊🐉",
     # Pateplay
     "Buffalo Thunder": "🦬⚡",
     "Aztec Temple": "🏺🌿",
     "Viking Glory": "⚔️🛡️",
-    # BB Games
-    "Jungle King BB": "🦁👑",
-    "Fortune Bull BB": "🐂💰",
-    "Dragon Palace BB": "🐉🏯",
-    # Easy Bet
-    "Lucky Sevens EB": "7️⃣✨",
-    "Wild West EB": "🤠🌵",
-    "Ocean Fortune EB": "🌊💰",
-    # Betby
-    "Penalty Shootout": "⚽🥅",
-    "Virtual Horse Racing": "🏇🏆",
-    "Spin & Win Betby": "🎡💰",
-    # 1Bet
-    "Golden Tiger 1Bet": "🐯💛",
-    "Lucky Coins 1Bet": "🪙🍀",
-    "Dragon Fortune 1Bet": "🐉💰",
-    # Revenge Gaming
+    # Revenge Games
     "Revenge of Medusa": "🐍👑",
     "Pirate's Revenge": "🏴‍☠️⚔️",
     "Viking's Revenge": "⚔️🔥",
     "Dragon's Revenge": "🐉💢",
     "Warrior's Revenge": "⚔️💪",
+    # Betby
+    "Penalty Shootout": "⚽🥅",
+    "Virtual Horse Racing": "🏇🏆",
+    # 1Bet
+    "Golden Tiger": "🐯💛",
+    "Lucky Coins": "🪙🍀",
+    # Easybet
+    "Lucky Sevens": "7️⃣✨",
+    "Wild West": "🤠🌵",
+    # Outros
+    "Devil Fire Twins": "😈🔥",
+    "Bone Fortune": "💀🎰",
+    "Fortune Hook Boom": "🎣💥",
+    "Fortune Hook": "🎣",
+    "Lucky Jaguar 500": "🐆",
+    "Money Pot": "🍀💰",
+    "Pirate Queen 2": "🏴‍☠️👑",
+    "Caribbean Queen": "🌊👑",
+    "Poseidon": "🔱",
+    "Monkey Boom": "🐒💥",
+    "Cybercats 500x": "🤖🐱",
+    "Hamsta": "🐹",
+    "Athens Megaways": "🏛️",
+    "Bass Boss": "🐟👑",
+    "Cake and Ice Cream": "🎂🍦",
+    "Clover Craze": "🍀",
+    "God Hand": "🙏⚡",
+    "Infinity Tower": "🗼♾️",
+    "Rise of the Mighty Gods": "⚡👑",
+    "Magic Ace": "🃏✨",
+    "Mjolnir": "⚡🔨",
+    "Prosperity Tiger": "🐯💰",
+    "Treasure Bowl": "🏺💎",
+    "Alibaba's Cave": "🪔💰",
+    "Cash Mania": "💵🎰",
+    "Doomsday Rampage": "💥🌋",
+    "Double Fortune": "🍀🍀",
+    "Forbidden Alchemy": "⚗️🔮",
+    "Fortune Ganesha": "🐘🙏",
+    "Inferno Mayhem": "🔥💀",
+    "Eternal Kiss": "💋🌹",
+    "Electro Fiesta": "⚡🎉",
+    "Halloween Meow": "🎃🐱",
+    "Magic Scroll": "📜✨",
+    "Futebol Fever": "⚽🔥",
+    "Joker Coins": "🃏🪙",
+    "Cowboys": "🤠🌵",
+    "Chihuahua": "🐕",
+    "Elves Town": "🧝🏘️",
+    "Bank Robbers": "🏦🦹",
+    "Golden Genie": "🧞💛",
+    "Poker Win": "♠️💰",
 }
+
+LISTA_JOGOS = list(JOGOS.keys())
 
 
 def gerar_mensagem(nome_jogo):
     emoji = JOGOS.get(nome_jogo, "🎰")
     estrategia = random.choice(ESTRATEGIAS)
-    return f"""🎰 SINAL CONFIRMADO 🎰
+    cabecalho = random.choice(CABECALHOS)
+    rodape = random.choice(RODAPES)
+    separador = "═" * 22
 
-🎮 Jogo: {nome_jogo} {emoji}
+    return f"""{cabecalho}
 
-📊 Estratégia:
+🎮 {nome_jogo} {emoji}
+
+{separador}
+📊 ESTRATÉGIA DO DIA:
 {estrategia}
+{separador}
 
-⚠️ Jogue com responsabilidade!
-🔥 ENTRE COM GERENCIAMENTO!"""
+{rodape}"""
+
+
+def gerar_escala_diaria():
+    random.seed(datetime.now(FUSO).strftime("%Y-%m-%d"))
+    jogos = LISTA_JOGOS.copy()
+    random.shuffle(jogos)
+
+    total = len(jogos)
+    minutos_dia = 24 * 60
+    intervalo = minutos_dia // total
+
+    escala = []
+    for i, jogo in enumerate(jogos):
+        minuto_total = i * intervalo + random.randint(0, intervalo - 1)
+        hora = (minuto_total // 60) % 24
+        minuto = minuto_total % 60
+        horario = f"{hora:02d}:{minuto:02d}"
+        escala.append((jogo, horario))
+
+    escala.sort(key=lambda x: x[1])
+    return escala
 
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS mensagens (
+    c.execute("""CREATE TABLE IF NOT EXISTS enviados (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome_jogo TEXT NOT NULL,
-        imagem_url TEXT DEFAULT '',
-        ultimo_envio TEXT DEFAULT ''
-    )""")
-    c.execute("""CREATE TABLE IF NOT EXISTS horarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        hora TEXT NOT NULL
+        data TEXT NOT NULL,
+        jogo TEXT NOT NULL,
+        horario TEXT NOT NULL
     )""")
     conn.commit()
     conn.close()
 
 init_db()
-def enviar_telegram(texto, imagem_url=""):
+
+
+def enviar_telegram(texto):
     if not TOKEN or not CHAT_ID:
         print("TOKEN ou CHAT_ID não configurados.")
         return
     try:
-        if imagem_url and imagem_url.strip():
-            url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
-            data = {"chat_id": CHAT_ID, "photo": imagem_url.strip(), "caption": texto}
-        else:
-            url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-            data = {"chat_id": CHAT_ID, "text": texto}
+        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+        data = {"chat_id": CHAT_ID, "text": texto}
         resultado = requests.post(url, data=data, timeout=30)
-        print(f"Telegram respondeu: {resultado.status_code} - {resultado.text}")
+        print(f"Telegram respondeu: {resultado.status_code}")
     except Exception as e:
         print(f"Erro ao enviar: {e}")
 
 
-def buscar_mensagens():
+def ja_enviado(data, jogo, horario):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT id, nome_jogo, imagem_url, ultimo_envio FROM mensagens")
-    dados = c.fetchall()
+    c.execute("SELECT id FROM enviados WHERE data=? AND jogo=? AND horario=?", (data, jogo, horario))
+    existe = c.fetchone()
     conn.close()
-    return dados
+    return existe is not None
 
 
-def buscar_horarios():
+def registrar_envio(data, jogo, horario):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT id, hora FROM horarios ORDER BY hora")
-    dados = c.fetchall()
+    c.execute("INSERT INTO enviados (data, jogo, horario) VALUES (?, ?, ?)", (data, jogo, horario))
+    conn.commit()
     conn.close()
-    return dados
-
-
-def horarios_hoje():
-    horarios = [h[1] for h in buscar_horarios()]
-    if not horarios:
-        return []
-    agora = datetime.now(FUSO)
-    rotacao = int(agora.strftime("%d")) % len(horarios)
-    return horarios[rotacao:] + horarios[:rotacao]
 
 
 HTML = """
@@ -308,77 +413,61 @@ HTML = """
         h1 { color: #f5c542; text-align: center; font-size: 26px; margin-bottom: 5px; }
         .sub { text-align: center; color: #aaa; margin-bottom: 15px; }
         .hora-box { text-align: center; background: #f5c542; color: #000; padding: 8px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media(max-width:700px){ .grid { grid-template-columns: 1fr; } }
+        .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat { background: #16213e; border: 1px solid #f5c542; border-radius: 10px; padding: 15px; text-align: center; }
+        .stat-num { font-size: 28px; font-weight: bold; color: #f5c542; }
+        .stat-label { color: #aaa; font-size: 12px; margin-top: 5px; }
+        .info-box { background: #16213e; border: 1px solid #f5c542; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: center; }
+        .info-box p { color: #aaa; font-size: 13px; margin-top: 8px; }
         .card { background: #16213e; border: 1px solid #f5c542; border-radius: 10px; padding: 20px; }
         .card h2 { color: #f5c542; margin-bottom: 15px; font-size: 17px; }
-        label { display: block; color: #ccc; margin-bottom: 5px; font-size: 14px; }
-        input, select { width: 100%; padding: 10px; background: #0f3460; color: #fff; border: 1px solid #f5c542; border-radius: 6px; margin-bottom: 12px; font-size: 14px; }
-        select option { background: #0f3460; }
-        .btn { background: #f5c542; color: #000; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; }
-        .btn:hover { background: #e5b532; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { background: #f5c542; color: #000; padding: 8px; text-align: left; }
         td { padding: 8px; border-bottom: 1px solid #333; }
         tr:hover { background: #0f3460; }
-        .tags { background: #0f3460; border-radius: 8px; padding: 12px; margin-top: 15px; }
-        .tags span { background: #f5c542; color: #000; padding: 3px 10px; border-radius: 20px; margin: 3px; display: inline-block; font-weight: bold; font-size: 13px; }
-        .secao { margin-top: 20px; }
-        .del { color: #e8384f; text-decoration: none; }
-        .dica { background: #0f3460; border-left: 3px solid #f5c542; border-radius: 6px; padding: 10px; margin-top: 10px; color: #ccc; font-size: 13px; }
+        .enviado { color: #4caf50; font-weight: bold; }
+        .pendente { color: #f5c542; }
+        .proximo { background: #0f3460 !important; }
+        @media(max-width:700px){ .stats { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <h1>👑 Painel Rainha Games</h1>
-    <p class="sub">Sistema de sinais automáticos</p>
+    <p class="sub">Sistema 100% automático — zero configuração manual!</p>
     <div class="hora-box">🕐 Horário atual Brasil: {{ agora }}</div>
-    <div class="grid">
-        <div class="card">
-        <h2>🎮 Cadastrar Jogo</h2>
-            <form method="post" action="/">
-                <label>Escolha o jogo:</label>
-                <select name="nome_jogo">
-                    {% for j in jogos_lista %}
-                    <option value="{{ j }}">{{ j }}</option>
-                    {% endfor %}
-                </select>
-                <label>Link da imagem (opcional):</label>
-                <input name="imagem_url" placeholder="https://i.imgur.com/...">
-                <button class="btn">💾 Salvar Jogo</button>
-            </form>
-            <div class="dica">💡 Estratégia gerada automaticamente e varia a cada envio!</div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-num">{{ total_jogos }}</div>
+            <div class="stat-label">Jogos no sistema</div>
         </div>
-        <div class="card">
-            <h2>⏰ Cadastrar Horário</h2>
-            <form method="post" action="/horario/novo">
-                <label>Horário (HH:MM):</label>
-                <input name="hora" placeholder="Ex: 20:00" maxlength="5">
-                <button class="btn">➕ Adicionar</button>
-            </form>
-            <div class="tags">
-                <p style="color:#f5c542;font-weight:bold;margin-bottom:8px;">🔄 Rotação de hoje:</p>
-                {% for h in horarios_hoje %}<span>{{ h }}</span>
-                {% else %}<p style="color:#aaa;font-size:13px;">Nenhum horário ainda</p>{% endfor %}
-            </div>
-            <table style="margin-top:15px;">
-                <tr><th>Horário</th><th>Excluir</th></tr>
-                {% for h in todos_horarios %}
-                <tr><td>{{ h[1] }}</td><td><a class="del" href="/horario/excluir/{{ h[0] }}">🗑️</a></td></tr>
-                {% endfor %}
-            </table>
+        <div class="stat">
+            <div class="stat-num" style="color:#4caf50;">{{ enviados_hoje }}</div>
+            <div class="stat-label">✅ Enviados hoje</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">{{ pendentes_hoje }}</div>
+            <div class="stat-label">⏳ Pendentes hoje</div>
         </div>
     </div>
-    <div class="card secao">
-        <h2>📋 Jogos cadastrados ({{ mensagens|length }})</h2>
+
+    <div class="info-box">
+        <strong style="color:#f5c542;">🤖 Sistema Automático Ativo</strong>
+        <p>{{ total_jogos }} jogos distribuídos automaticamente nas 24 horas.<br>
+        Horários e estratégias mudam sozinhos todo dia. Nenhuma ação necessária!</p>
+    </div>
+
+    <div class="card">
+        <h2>📅 Escala de hoje — {{ data_hoje }}</h2>
         <table>
-            <tr><th>#</th><th>Jogo</th><th>Img</th><th>Último envio</th><th>Ação</th></tr>
-            {% for m in mensagens %}
-            <tr>
-                <td>{{ m[0] }}</td>
-                <td>{{ m[1] }}</td>
-                <td>{{ '✅' if m[2] else '❌' }}</td>
-                <td>{{ m[3] or 'Nunca' }}</td>
-                <td><a class="del" href="/excluir/{{ m[0] }}">🗑️</a></td>
+            <tr><th>Horário</th><th>Jogo</th><th>Status</th></tr>
+            {% for item in escala %}
+            <tr class="{{ 'proximo' if item.proximo else '' }}">
+                <td>{{ item.horario }}</td>
+                <td>{{ item.emoji }} {{ item.jogo }}</td>
+                <td class="{{ 'enviado' if item.enviado else 'pendente' }}">
+                    {{ '✅ Enviado' if item.enviado else ('👉 Próximo' if item.proximo else '⏳ Pendente') }}
+                </td>
             </tr>
             {% endfor %}
         </table>
@@ -388,81 +477,63 @@ HTML = """
 """
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def painel():
-    if request.method == "POST":
-        nome_jogo = request.form["nome_jogo"]
-        imagem_url = request.form.get("imagem_url", "")
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute("INSERT INTO mensagens (nome_jogo, imagem_url) VALUES (?, ?)", (nome_jogo, imagem_url))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("painel"))
-    agora = datetime.now(FUSO).strftime("%H:%M")
+    agora_dt = datetime.now(FUSO)
+    agora = agora_dt.strftime("%H:%M")
+    data_hoje = agora_dt.strftime("%Y-%m-%d")
+    escala_raw = gerar_escala_diaria()
+
+    escala = []
+    proximo_marcado = False
+    for jogo, horario in escala_raw:
+        enviado = ja_enviado(data_hoje, jogo, horario)
+        proximo = False
+        if not enviado and not proximo_marcado and horario >= agora:
+            proximo = True
+            proximo_marcado = True
+        escala.append({
+            "horario": horario,
+            "jogo": jogo,
+            "emoji": JOGOS.get(jogo, "🎰"),
+            "enviado": enviado,
+            "proximo": proximo,
+        })
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM enviados WHERE data=?", (data_hoje,))
+    enviados_hoje = c.fetchone()[0]
+    conn.close()
+
     return render_template_string(HTML,
         agora=agora,
-        mensagens=buscar_mensagens(),
-        todos_horarios=buscar_horarios(),
-        horarios_hoje=horarios_hoje(),
-        jogos_lista=sorted(JOGOS.keys())
+        data_hoje=data_hoje,
+        escala=escala,
+        total_jogos=len(LISTA_JOGOS),
+        enviados_hoje=enviados_hoje,
+        pendentes_hoje=len(LISTA_JOGOS) - enviados_hoje
     )
 
 
-@app.route("/excluir/<int:msg_id>")
-def excluir(msg_id):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("DELETE FROM mensagens WHERE id=?", (msg_id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for("painel"))
-
-
-@app.route("/horario/novo", methods=["POST"])
-def novo_horario():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT INTO horarios (hora) VALUES (?)", (request.form["hora"],))
-    conn.commit()
-    conn.close()
-    return redirect(url_for("painel"))
-
-
-@app.route("/horario/excluir/<int:h_id>")
-def excluir_horario(h_id):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("DELETE FROM horarios WHERE id=?", (h_id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for("painel"))
-
-
-def verificar_mensagens():
+def verificar_e_enviar():
     while True:
-                agora = datetime.now(FUSO)
+        agora = datetime.now(FUSO)
         hora_atual = agora.strftime("%H:%M")
         data_hoje = agora.strftime("%Y-%m-%d")
-        horarios = horarios_hoje()
-        print(f"Verificando... {hora_atual} | Horários: {horarios}")
-        if horarios:
-            conn = sqlite3.connect(DB_PATH)
-            c = conn.cursor()
-            c.execute("SELECT id, nome_jogo, imagem_url, ultimo_envio FROM mensagens")
-            for i, m in enumerate(c.fetchall()):
-                msg_id, nome_jogo, imagem_url, ultimo_envio = m
-                if i < len(horarios) and horarios[i] == hora_atual and ultimo_envio != data_hoje:
-                    texto = gerar_mensagem(nome_jogo)
-                    enviar_telegram(texto, imagem_url)
-                    c.execute("UPDATE mensagens SET ultimo_envio=? WHERE id=?", (data_hoje, msg_id))
-                    print(f"Enviado: {nome_jogo}")
-            conn.commit()
-            conn.close()
+        escala = gerar_escala_diaria()
+
+        for jogo, horario in escala:
+            if horario == hora_atual and not ja_enviado(data_hoje, jogo, horario):
+                texto = gerar_mensagem(jogo)
+                enviar_telegram(texto)
+                registrar_envio(data_hoje, jogo, horario)
+                print(f"Enviado: {jogo} às {horario}")
+
         time.sleep(20)
 
 
-threading.Thread(target=verificar_mensagens, daemon=True).start()
+threading.Thread(target=verificar_e_enviar, daemon=True).start()
 
-if name == "main":
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
