@@ -322,7 +322,6 @@ def gerar_mensagem(nome_jogo):
     cabecalho = random.choice(CABECALHOS)
     rodape = random.choice(RODAPES)
     separador = "═" * 22
-
     return f"""{cabecalho}
 
 🎮 {nome_jogo} {emoji}
@@ -336,17 +335,28 @@ def gerar_mensagem(nome_jogo):
 
 
 def gerar_escala_diaria():
-    random.seed(datetime.now(FUSO).strftime("%Y-%m-%d"))
+    agora = datetime.now(FUSO)
+    data_hoje = agora.strftime("%Y-%m-%d")
+    random.seed(data_hoje)
     jogos = LISTA_JOGOS.copy()
     random.shuffle(jogos)
 
     total = len(jogos)
-    minutos_dia = 24 * 60
-    intervalo = minutos_dia // total
+
+    # Dia 04/04/2026 começa às 13:00 — demais dias distribuem nas 24h
+    if data_hoje == "2026-04-04":
+        minuto_inicio = 13 * 60
+        minutos_disponiveis = (24 * 60) - minuto_inicio
+    else:
+        minuto_inicio = 0
+        minutos_disponiveis = 24 * 60
+
+    intervalo = minutos_disponiveis // total
 
     escala = []
     for i, jogo in enumerate(jogos):
-        minuto_total = i * intervalo + random.randint(0, intervalo - 1)
+        minuto_total = minuto_inicio + (i * intervalo) + random.randint(0, max(1, intervalo - 1))
+        minuto_total = min(minuto_total, 23 * 60 + 59)
         hora = (minuto_total // 60) % 24
         minuto = minuto_total % 60
         horario = f"{hora:02d}:{minuto:02d}"
