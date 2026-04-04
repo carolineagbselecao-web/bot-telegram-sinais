@@ -1,4 +1,340 @@
-<h2>🎮 Cadastrar Jogo</h2>
+from flask import Flask, request, render_template_string, redirect, url_for
+import sqlite3
+import threading
+import time
+from datetime import datetime
+import pytz
+import os
+import requests
+import random
+
+TOKEN = os.getenv("TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
+
+app = Flask(name)
+FUSO = pytz.timezone("America/Sao_Paulo")
+DB_PATH = "/tmp/database.db"
+
+ESTRATEGIAS = [
+    "🔥 Entre com aposta baixa nas primeiras 5 rodadas\n💰 Se não sair, dobre na 6ª entrada\n⚡ Máximo 3 martingales\n🛑 Stop loss: 20% da banca",
+    "🎯 Aguarde 3 rodadas sem ganho\n🚀 Entre na 4ª rodada com valor médio\n💎 Stop gain: 30%\n🛑 Stop loss: 20% da banca",
+    "💎 Observe 5 rodadas antes de entrar\n🎰 3 entradas com 10% da banca\n⚡ Pare ao primeiro green\n🛑 Stop loss: 15%",
+    "🌟 Aposte fixo por 6 rodadas\n💰 Dobre apenas 2 vezes\n🔄 Pare ao primeiro green\n🛑 Stop loss: 15% da banca",
+    "⚡ Entre com bet baixo por 5 rodadas\n🚀 Aumente na 6ª se não saiu\n📊 Limite de 3 martingales\n💰 Stop gain: 35%",
+    "🎰 Observe 3 rodadas antes de entrar\n💎 Aposte 8% da banca por entrada\n🔥 Máximo 4 tentativas\n🛑 Stop loss: 25%",
+    "🌈 Entre somente após 4 rodadas sem ganho\n💰 Bet progressivo: 5%, 8%, 12%\n⚡ Stop gain: 25% de lucro",
+    "🃏 Jogue leve nas primeiras 8 rodadas\n🚀 Force entrada na 9ª\n📊 3 martingales e pare\n🛑 Stop loss: 20%",
+    "🎯 Entre após sequência de 3 perdas\n💰 Aposte 6% da banca\n🔥 Stop gain: 40%\n🛑 Stop loss: 18%",
+    "⚡ Aguarde o bonus aparecer 1 vez\n🚀 Entre nas próximas 3 rodadas\n💎 Aposte 5% da banca\n🛑 Stop loss: 20%",
+]
+
+JOGOS = {
+    # PG Soft
+    "Fortune Tiger": "🐯",
+    "Fortune Rabbit": "🐰",
+    "Fortune Dragon": "🐉",
+    "Fortune Mouse": "🐭",
+    "Fortune Ox": "🐂",
+    "Fortune Horse": "🐴",
+    "Fortune Snake": "🐍",
+    # Pragmatic Play
+    "Gates of Olympus": "⚡",
+    "Sweet Bonanza": "🍬",
+    "Big Bass Bonanza": "🐟",
+    "The Dog House": "🐕",
+    "Starlight Princess": "⭐",
+    "Sugar Rush": "🍭",
+    # Outros jogos variados
+    "Devil Fire Twins": "😈🔥",
+    "Bone Fortune": "💀",
+    "Fortune Hook Boom": "🎣💥",
+    "Fortune Hook": "🎣",
+    "Joker Coins": "🃏🪙",
+    "Lucky Jaguar 500": "🐆",
+    "Money Pot": "🍀💰",
+    "Pirate Queen 2": "🏴‍☠️👑",
+    "Caribbean Queen": "🌊👑",
+    "Poseidon": "🔱",
+    "Monkey Boom": "🐒💥",
+    "Cybercats 500x": "🤖🐱",
+    "Hamsta": "🐹",
+    "Athens Megaways": "🏛️",
+    "Bass Boss": "🐟👑",
+    "Cake and Ice Cream": "🎂🍦",
+    "Clover Craze": "🍀",
+    "Cyber Attack": "💻⚡",
+    "Dragon's Fire Megaways": "🐉🔥",
+    "God Hand Feature Buy": "🙏⚡",
+    "Infinity Tower": "🗼♾️",
+    "Rise of the Mighty Gods": "⚡👑",
+    "Dead Dear or Deader": "💀🦌",
+    "East Coast vs West Coast": "🏙️",
+    "Fire in the Hole 3": "💣🔥",
+    "Magic Ace": "🃏✨",
+    "Mjolnir": "⚡🔨",
+    "Money Mags Man": "💰🕴️",
+    "Pop Pop Candy": "🍭💥",
+    "Prosperity Tiger": "🐯💰",
+    "Treasure Bowl": "🏺💎",
+    "Alibaba's Cave of Fortune": "🪔💰",
+    "Cash Mania": "💵🎰",
+    "Diner Delights": "🍔✨",
+    "Diner Frenzy Spins": "🍕🎰",
+    "Doomsday Rampage": "💥🌋",
+    "Double Fortune": "🍀🍀",
+    "Dragon Treasure Quest": "🐉💎",
+    "Forbidden Alchemy": "⚗️🔮",
+    "Fortune Ganesha": "🐘🙏",
+    "Graffiti Rush": "🎨💨",
+    "Hansel and Gretel": "🍬🏠",
+    "Inferno Mayhem": "🔥💀",
+    "Jack the Giant Hunter": "🪓👹",
+    "Jungle Delight": "🌿🐾",
+    "Jurassic Kingdom": "🦕👑",
+    "Golden Genie": "🧞💛",
+    "Poker Win": "♠️💰",
+    "Cowboys": "🤠",
+    "Chihuahua": "🐕",
+    "Elves Town": "🧝🏘️",
+    "Eternal Kiss": "💋🌹",
+    "Bank Robbers": "🏦🦹",
+    "Big Wild Buffalo": "🦬💥",
+    "Electro Fiesta": "⚡🎉",
+    "Halloween Meow": "🎃🐱",
+    "Magic Scroll": "📜✨",
+    "Futebol Fever": "⚽🔥",
+    # BGaming
+    "Wild Tiger": "🐯⚡",
+    "Bonanza Billion": "💎💰",
+    "Fruit Million": "🍎🎰",
+            "Burning Chilli X": "🌶️🔥",
+    "Wild Clusters": "🍇✨",
+    # Ruby Play
+    "777 Strike": "7️⃣🎰",
+    "Aztec Fire": "🔥🏺",
+    "Cash Bonanza": "💰🎊",
+    "Fire and Gold": "🔥💛",
+    "Lucky Piggy": "🐷🍀",
+    # Endorphina
+    "Book of Aztec": "📖🏺",
+    "Twerk": "💃🎵",
+    "Satoshi's Secret": "💻🔐",
+    "Fruitmania": "🍓🎰",
+    "Vegas Nights": "🌃🎲",
+    # Playson
+    "Solar Queen": "☀️👑",
+    "Book of Gold": "📖💛",
+    "Burning Wins": "🔥🏆",
+    "Pearl River": "💧🐲",
+    "Legend of Cleopatra": "👸🏺",
+    # Hacksaw Gaming
+    "Wanted Dead or a Wild": "🤠🔫",
+    "Stick Em": "🎯💥",
+    "Chaos Crew": "🦹💣",
+    "Cubes": "🧊⚡",
+    "Pizza Pays": "🍕💰",
+    # 3 Oaks Gaming
+    "Hot Triple Sevens": "7️⃣🔥",
+    "Candy Boom": "🍬💥",
+    "Gold Express": "🚂💛",
+    "Mighty Kong": "🦍💪",
+    "Book of Tattoo": "📖🎨",
+    # Microgaming
+    "Mega Moolah": "🦁💰",
+    "Thunderstruck II": "⚡🔨",
+    "Immortal Romance": "🧛💕",
+    "Break da Bank Again": "🏦💥",
+    "Avalon II": "⚔️🏰",
+    "Starburst": "⭐💎",
+    "Game of Thrones Slots": "👑⚔️",
+    "Jurassic World": "🦕🌿",
+    "Agent Jane Blonde": "🕵️💋",
+    "Mermaids Millions": "🧜💎",
+    # B Gaming
+    "Aztec Gold": "🏺💛",
+    "Book of Egypt": "📖🐱",
+    "Cleopatra Jewels": "👸💎",
+    "Dragon's Gold": "🐉💰",
+    "Lucky Farm": "🌾🍀",
+    "Pirate Gold": "🏴‍☠️💛",
+    "Magic Forest": "🌲✨",
+    "Safari Heat": "🦁🔥",
+    "Thai Flower": "🌸💐",
+    "Wolf Moon": "🐺🌙",
+    # Fat Panda
+    "Panda Panda": "🐼🎋",
+    "Lucky Panda": "🐼🍀",
+    "Panda Gold": "🐼💛",
+    # Spirit Gaming
+    "Ox Fortune Spirit": "🐂💰",
+    "Mouse Fortune Spirit": "🐭💰",
+    "Rabbit Fortune Spirit": "🐰💰",
+    "Tiger Fortune Spirit": "🐯💰",
+    "Dragon Fortune Spirit": "🐉💰",
+    # Original Games
+    "Book of Ra": "📖☀️",
+    "Lucky Lady's Charm": "🍀💋",
+    "Sizzling Hot": "🔥🍒",
+    # Funky Games
+    "Racing King": "🏎️🏆",
+    "White Tiger": "🐯⬜",
+    "Golden Koi Rise": "🐟💛",
+    "Plinko UFO": "🛸💰",
+    "Football Strike": "⚽🎯",
+    # 759 Gaming
+    "Lucky Dragons 759": "🐉🍀",
+    "Fortune Fish 759": "🐟💰",
+    "Golden Wheel 759": "🎡💛",
+    "Tiger Boom 759": "🐯💥",
+    "Phoenix Rise 759": "🦅🔥",
+    "Dragon Ball 759": "🐉⚽",
+    "Lucky Koi 759": "🐠🍀",
+    "Wild Panda 759": "🐼🌿",
+    "Gold Rush 759": "⛏️💛",
+    "Ocean King 759": "🌊👑",
+    # Pateplay
+    "Buffalo Thunder": "🦬⚡",
+    "Aztec Temple": "🏺🌿",
+    "Viking Glory": "⚔️🛡️",
+    # BB Games
+    "Jungle King BB": "🦁👑",
+    "Fortune Bull BB": "🐂💰",
+    "Dragon Palace BB": "🐉🏯",
+    # Easy Bet
+    "Lucky Sevens EB": "7️⃣✨",
+    "Wild West EB": "🤠🌵",
+    "Ocean Fortune EB": "🌊💰",
+    # Betby
+    "Penalty Shootout": "⚽🥅",
+    "Virtual Horse Racing": "🏇🏆",
+    "Spin & Win Betby": "🎡💰",
+    # 1Bet
+    "Golden Tiger 1Bet": "🐯💛",
+    "Lucky Coins 1Bet": "🪙🍀",
+    "Dragon Fortune 1Bet": "🐉💰",
+    # Revenge Gaming
+    "Revenge of Medusa": "🐍👑",
+    "Pirate's Revenge": "🏴‍☠️⚔️",
+    "Viking's Revenge": "⚔️🔥",
+    "Dragon's Revenge": "🐉💢",
+    "Warrior's Revenge": "⚔️💪",
+}
+
+
+def gerar_mensagem(nome_jogo):
+    emoji = JOGOS.get(nome_jogo, "🎰")
+    estrategia = random.choice(ESTRATEGIAS)
+    return f"""🎰 SINAL CONFIRMADO 🎰
+
+🎮 Jogo: {nome_jogo} {emoji}
+
+📊 Estratégia:
+{estrategia}
+
+⚠️ Jogue com responsabilidade!
+🔥 ENTRE COM GERENCIAMENTO!"""
+
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("""CREATE TABLE IF NOT EXISTS mensagens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome_jogo TEXT NOT NULL,
+        imagem_url TEXT DEFAULT '',
+        ultimo_envio TEXT DEFAULT ''
+    )""")
+    c.execute("""CREATE TABLE IF NOT EXISTS horarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        hora TEXT NOT NULL
+    )""")
+    conn.commit()
+    conn.close()
+
+init_db()
+def enviar_telegram(texto, imagem_url=""):
+    if not TOKEN or not CHAT_ID:
+        print("TOKEN ou CHAT_ID não configurados.")
+        return
+    try:
+        if imagem_url and imagem_url.strip():
+            url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
+            data = {"chat_id": CHAT_ID, "photo": imagem_url.strip(), "caption": texto}
+        else:
+            url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+            data = {"chat_id": CHAT_ID, "text": texto}
+        resultado = requests.post(url, data=data, timeout=30)
+        print(f"Telegram respondeu: {resultado.status_code} - {resultado.text}")
+    except Exception as e:
+        print(f"Erro ao enviar: {e}")
+
+
+def buscar_mensagens():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT id, nome_jogo, imagem_url, ultimo_envio FROM mensagens")
+    dados = c.fetchall()
+    conn.close()
+    return dados
+
+
+def buscar_horarios():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT id, hora FROM horarios ORDER BY hora")
+    dados = c.fetchall()
+    conn.close()
+    return dados
+
+
+def horarios_hoje():
+    horarios = [h[1] for h in buscar_horarios()]
+    if not horarios:
+        return []
+    agora = datetime.now(FUSO)
+    rotacao = int(agora.strftime("%d")) % len(horarios)
+    return horarios[rotacao:] + horarios[:rotacao]
+
+
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Rainha Games</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial; background: #1a1a2e; color: #fff; padding: 20px; }
+        h1 { color: #f5c542; text-align: center; font-size: 26px; margin-bottom: 5px; }
+        .sub { text-align: center; color: #aaa; margin-bottom: 15px; }
+        .hora-box { text-align: center; background: #f5c542; color: #000; padding: 8px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media(max-width:700px){ .grid { grid-template-columns: 1fr; } }
+        .card { background: #16213e; border: 1px solid #f5c542; border-radius: 10px; padding: 20px; }
+        .card h2 { color: #f5c542; margin-bottom: 15px; font-size: 17px; }
+        label { display: block; color: #ccc; margin-bottom: 5px; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; background: #0f3460; color: #fff; border: 1px solid #f5c542; border-radius: 6px; margin-bottom: 12px; font-size: 14px; }
+        select option { background: #0f3460; }
+        .btn { background: #f5c542; color: #000; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; }
+        .btn:hover { background: #e5b532; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th { background: #f5c542; color: #000; padding: 8px; text-align: left; }
+        td { padding: 8px; border-bottom: 1px solid #333; }
+        tr:hover { background: #0f3460; }
+        .tags { background: #0f3460; border-radius: 8px; padding: 12px; margin-top: 15px; }
+        .tags span { background: #f5c542; color: #000; padding: 3px 10px; border-radius: 20px; margin: 3px; display: inline-block; font-weight: bold; font-size: 13px; }
+        .secao { margin-top: 20px; }
+        .del { color: #e8384f; text-decoration: none; }
+        .dica { background: #0f3460; border-left: 3px solid #f5c542; border-radius: 6px; padding: 10px; margin-top: 10px; color: #ccc; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <h1>👑 Painel Rainha Games</h1>
+    <p class="sub">Sistema de sinais automáticos</p>
+    <div class="hora-box">🕐 Horário atual Brasil: {{ agora }}</div>
+    <div class="grid">
+        <div class="card">
+        <h2>🎮 Cadastrar Jogo</h2>
             <form method="post" action="/">
                 <label>Escolha o jogo:</label>
                 <select name="nome_jogo">
@@ -105,7 +441,7 @@ def excluir_horario(h_id):
 
 def verificar_mensagens():
     while True:
-    agora = datetime.now(FUSO)
+                agora = datetime.now(FUSO)
         hora_atual = agora.strftime("%H:%M")
         data_hoje = agora.strftime("%Y-%m-%d")
         horarios = horarios_hoje()
