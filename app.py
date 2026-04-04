@@ -14,21 +14,21 @@ app = Flask(__name__)
 FUSO = pytz.timezone("America/Sao_Paulo")
 
 ESTRATEGIAS = [
-    "🔥 Entre com aposta baixa nas primeiras 5 rodadas\n💰 Se não sair, dobre na 6ª entrada\n⚡ Máximo 3 martingales\n🛑 Stop loss: 20% da banca",
-    "🎯 Aguarde 3 rodadas sem ganho\n🚀 ENTRE AGORA na 4ª rodada\n💎 Stop gain: 30%\n🛑 Stop loss: 20% da banca",
+    "⚡ Entre com bet baixo por 5 rodadas\n🚀 Aumente na 6ª se não saiu\n📊 Limite de 3 martingales\n💰 Stop loss: 20% da banca",
+    "🎯 Aguarde 3 rodadas sem ganho\n🚀 Entre na 4ª rodada\n💎 Stop gain: 30%\n🛑 Stop loss: 20% da banca",
     "💎 Observe 5 rodadas antes de entrar\n🎰 3 entradas com 10% da banca\n⚡ Pare ao primeiro green\n🛑 Stop loss: 15%",
     "🌟 Aposte fixo por 6 rodadas\n💰 Dobre apenas 2 vezes\n🔄 Pare ao primeiro green\n🛑 Stop loss: 15% da banca",
     "⚡ ENTRADA CONFIRMADA — bet baixo por 5 rodadas\n🚀 Aumente na 6ª se não saiu\n📊 Limite de 3 martingales\n💰 Stop gain: 35%",
     "🎰 Observe 3 rodadas antes de entrar\n💎 Aposte 8% da banca por entrada\n🔥 Máximo 4 tentativas\n🛑 Stop loss: 25%",
-    "🌈 ENTRE AGORA após 4 rodadas sem ganho\n💰 Bet progressivo: 5%, 8%, 12%\n⚡ Stop gain: 25% de lucro",
-    "🃏 Jogue leve nas primeiras 8 rodadas\n🚀 FORCE ENTRADA na 9ª\n📊 3 martingales e pare\n🛑 Stop loss: 20%",
-    "🎯 ENTRADA QUENTE após 3 perdas seguidas\n💰 Aposte 6% da banca\n🔥 Stop gain: 40%\n🛑 Stop loss: 18%",
-    "⚡ Aguarde o bonus aparecer 1 vez\n🚀 ENTRE NAS PRÓXIMAS 3 RODADAS\n💎 Aposte 5% da banca\n🛑 Stop loss: 20%",
+    "🌈 Entre após 4 rodadas sem ganho\n💰 Bet progressivo: 5%, 8%, 12%\n⚡ Stop gain: 25% de lucro",
+    "🃏 Jogue leve nas primeiras 8 rodadas\n🚀 Entre na 9ª rodada\n📊 3 martingales e pare\n🛑 Stop loss: 20%",
+    "🎯 Entre após 3 perdas seguidas\n💰 Aposte 6% da banca\n🔥 Stop gain: 40%\n🛑 Stop loss: 18%",
+    "⚡ Aguarde o bônus aparecer 1 vez\n🚀 Entre nas próximas 3 rodadas\n💎 Aposte 5% da banca\n🛑 Stop loss: 20%",
     "🎲 Comece com 3% da banca\n💰 Aumente 1% a cada perda\n🏆 Pare ao atingir 25% de lucro\n🛑 Stop loss: 15%",
-    "🔥 ENTRADA AGORA — aposte valor fixo\n💎 Máximo 10 rodadas seguidas\n⚡ Dobre apenas uma vez\n🛑 Stop loss: 20%",
-    "💥 SINAL QUENTE — entre com 5% da banca\n🎯 3 tentativas máximo\n💰 Stop gain: 30%\n🛑 Stop loss: 15%",
-    "🚀 ENTRE AGORA com bet médio\n🔄 Se perder, aguarde 3 rodadas e entre de novo\n💎 Stop gain: 25%\n🛑 Stop loss: 20%",
-    "⚡ ENTRADA IMEDIATA — bet fixo por 8 rodadas\n💰 Dobre na 9ª se não saiu\n🏆 Stop gain: 35%\n🛑 Stop loss: 20%",
+    "🔥 Aposte valor fixo\n💎 Máximo 10 rodadas seguidas\n⚡ Dobre apenas uma vez\n🛑 Stop loss: 20%",
+    "💥 Entre com 5% da banca\n🎯 3 tentativas no máximo\n💰 Stop gain: 30%\n🛑 Stop loss: 15%",
+    "🚀 Entre com bet médio\n🔄 Se perder, aguarde 3 rodadas e entre de novo\n💎 Stop gain: 25%\n🛑 Stop loss: 20%",
+    "⚡ Bet fixo por 8 rodadas\n💰 Dobre na 9ª se não saiu\n🏆 Stop gain: 35%\n🛑 Stop loss: 20%",
 ]
 
 CABECALHOS = [
@@ -42,7 +42,7 @@ CABECALHOS = [
 ]
 
 RODAPES = [
-    "⚠️ Jogue com responsabilidade!\n💪 GESTÃO É TUDO!\n🔥 BORA PRA CIMA!",
+    "⚠️ Nunca aposte mais do que pode perder!\n💪 GESTÃO É TUDO!\n🔥 BORA PRA CIMA!",
     "🛑 Respeite o stop loss!\n💡 Quem tem gestão, tem lucro!\n👑 RAINHA GAMES",
     "⚠️ Nunca aposte mais do que pode perder!\n🚀 VAMOS COM TUDO!\n👑 RAINHA GAMES",
     "💎 Disciplina gera resultado!\n🎯 Foco no gerenciamento!\n🔥 FORÇA TROPA!",
@@ -137,14 +137,25 @@ JOGOS = {
 LISTA_JOGOS = list(JOGOS.keys())
 
 enviados = {}
+escala_cache = {}
+
+
+def limpar_texto_estrategia(texto):
+    texto = texto.replace("ESTRATÉGIA CONFIRMADA —", "")
+    texto = texto.replace("ESTRATÉGIA CONFIRMADA -", "")
+    texto = texto.replace("ESTRATÉGIA CONFIRMADA", "")
+    texto = texto.replace("ESTRATÉGIA DO DIA:", "")
+    texto = texto.replace("ESTRATÉGIA DO DIA", "")
+    return texto.strip()
 
 
 def gerar_mensagem(nome_jogo):
     emoji = JOGOS.get(nome_jogo, "🎰")
-    estrategia = random.choice(ESTRATEGIAS)
+    estrategia = limpar_texto_estrategia(random.choice(ESTRATEGIAS))
     cabecalho = random.choice(CABECALHOS)
     rodape = random.choice(RODAPES)
     separador = "═" * 22
+
     return f"""{cabecalho}
 
 🎮 {nome_jogo} {emoji}
@@ -157,33 +168,72 @@ def gerar_mensagem(nome_jogo):
 {rodape}"""
 
 
-def gerar_escala_diaria():
-    agora = datetime.now(FUSO)
-    data_hoje = agora.strftime("%Y-%m-%d")
-    random.seed(data_hoje)
+def horario_para_minutos(horario):
+    hora, minuto = horario.split(":")
+    return int(hora) * 60 + int(minuto)
+
+
+def minutos_para_horario(total_minutos):
+    hora = (total_minutos // 60) % 24
+    minuto = total_minutos % 60
+    return f"{hora:02d}:{minuto:02d}"
+
+
+def gerar_escala_do_dia(data_str):
+    random.seed(data_str)
+
     jogos = LISTA_JOGOS.copy()
     random.shuffle(jogos)
+
     total = len(jogos)
+    if total == 0:
+        return []
 
-    if data_hoje == "2026-04-04":
-        minuto_inicio = 13 * 60
-        minutos_disponiveis = (24 * 60) - minuto_inicio
-    else:
-        minuto_inicio = 0
-        minutos_disponiveis = 24 * 60
-
-    intervalo = minutos_disponiveis // total
+    intervalo = 1440 / total
+    horarios_usados = set()
     escala = []
+
     for i, jogo in enumerate(jogos):
-        minuto_total = minuto_inicio + (i * intervalo) + random.randint(0, max(1, intervalo - 1))
-        minuto_total = min(minuto_total, 23 * 60 + 59)
-        hora = (minuto_total // 60) % 24
-        minuto = minuto_total % 60
-        horario = f"{hora:02d}:{minuto:02d}"
+        inicio_faixa = int(i * intervalo)
+        fim_faixa = int((i + 1) * intervalo) - 1
+
+        if fim_faixa < inicio_faixa:
+            fim_faixa = inicio_faixa
+
+        minuto_total = random.randint(inicio_faixa, fim_faixa)
+
+        while minuto_total in horarios_usados:
+            minuto_total = (minuto_total + 1) % 1440
+
+        horarios_usados.add(minuto_total)
+        horario = minutos_para_horario(minuto_total)
         escala.append((jogo, horario))
 
-    escala.sort(key=lambda x: x[1])
+    escala.sort(key=lambda x: horario_para_minutos(x[1]))
     return escala
+
+
+def obter_escala_diaria():
+    agora = datetime.now(FUSO)
+    data_hoje = agora.strftime("%Y-%m-%d")
+
+    if data_hoje not in escala_cache:
+        escala_cache.clear()
+        escala_cache[data_hoje] = gerar_escala_do_dia(data_hoje)
+
+    return escala_cache[data_hoje]
+
+
+def limpar_enviados_antigos():
+    hoje = datetime.now(FUSO).strftime("%Y-%m-%d")
+    chaves_para_remover = []
+
+    for chave in enviados.keys():
+        if not chave.startswith(f"{hoje}_"):
+            chaves_para_remover.append(chave)
+
+    for chave in chaves_para_remover:
+        enviados.pop(chave, None)
 
 
 def ja_enviado(data, jogo, horario):
@@ -198,9 +248,17 @@ def enviar_telegram(texto):
     if not TOKEN or not CHAT_ID:
         print("TOKEN ou CHAT_ID não configurados.")
         return
+
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        resultado = requests.post(url, data={"chat_id": CHAT_ID, "text": texto}, timeout=30)
+        resultado = requests.post(
+            url,
+            data={
+                "chat_id": CHAT_ID,
+                "text": texto
+            },
+            timeout=30
+        )
         print(f"Telegram respondeu: {resultado.status_code}")
     except Exception as e:
         print(f"Erro ao enviar: {e}")
@@ -214,32 +272,109 @@ HTML = """
     <title>Painel Rainha Games</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial; background: #1a1a2e; color: #fff; padding: 20px; }
-        h1 { color: #f5c542; text-align: center; font-size: 26px; margin-bottom: 5px; }
-        .sub { text-align: center; color: #aaa; margin-bottom: 15px; }
-        .hora-box { text-align: center; background: #f5c542; color: #000; padding: 8px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .stat { background: #16213e; border: 1px solid #f5c542; border-radius: 10px; padding: 15px; text-align: center; }
-        .stat-num { font-size: 28px; font-weight: bold; color: #f5c542; }
-        .stat-label { color: #aaa; font-size: 12px; margin-top: 5px; }
-        .info-box { background: #16213e; border: 1px solid #f5c542; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: center; }
-        .info-box p { color: #aaa; font-size: 13px; margin-top: 8px; }
-        .card { background: #16213e; border: 1px solid #f5c542; border-radius: 10px; padding: 20px; }
-        .card h2 { color: #f5c542; margin-bottom: 15px; font-size: 17px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f5c542; color: #000; padding: 8px; text-align: left; }
-        td { padding: 8px; border-bottom: 1px solid #333; }
-        tr:hover { background: #0f3460; }
-        .enviado { color: #4caf50; font-weight: bold; }
-        .pendente { color: #f5c542; }
-        .proximo { background: #0f3460 !important; }
-        @media(max-width:700px){ .stats { grid-template-columns: 1fr; } }
+        body { font-family: Arial, sans-serif; background: #0d0d0d; color: #fff; padding: 20px; }
+        h1 { color: #d4af37; text-align: center; font-size: 28px; margin-bottom: 6px; }
+        .sub { text-align: center; color: #bdbdbd; margin-bottom: 18px; }
+        .hora-box {
+            text-align: center;
+            background: linear-gradient(135deg, #d4af37, #f5d76e);
+            color: #000;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat {
+            background: #151515;
+            border: 1px solid #d4af37;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(212,175,55,0.08);
+        }
+        .stat-num {
+            font-size: 30px;
+            font-weight: bold;
+            color: #d4af37;
+        }
+        .stat-label {
+            color: #bdbdbd;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+        .info-box {
+            background: #151515;
+            border: 1px solid #d4af37;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(212,175,55,0.08);
+        }
+        .info-box p {
+            color: #bdbdbd;
+            font-size: 13px;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .card {
+            background: #151515;
+            border: 1px solid #d4af37;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 12px rgba(212,175,55,0.08);
+        }
+        .card h2 {
+            color: #d4af37;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            background: #d4af37;
+            color: #000;
+            padding: 10px;
+            text-align: left;
+        }
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #2d2d2d;
+        }
+        tr:hover {
+            background: #1c1c1c;
+        }
+        .enviado {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .pendente {
+            color: #f5d76e;
+        }
+        .proximo {
+            background: rgba(212,175,55,0.12) !important;
+        }
+        @media(max-width:700px){
+            .stats { grid-template-columns: 1fr; }
+            table { font-size: 12px; }
+        }
     </style>
 </head>
 <body>
     <h1>👑 Painel Rainha Games</h1>
-    <p class="sub">Sistema 100% automático — zero configuração manual!</p>
+    <p class="sub">Sistema automático ativo 24 horas por dia</p>
+
     <div class="hora-box">🕐 Horário atual Brasil: {{ agora }}</div>
+
     <div class="stats">
         <div class="stat">
             <div class="stat-num">{{ total_jogos }}</div>
@@ -254,15 +389,23 @@ HTML = """
             <div class="stat-label">⏳ Pendentes hoje</div>
         </div>
     </div>
+
     <div class="info-box">
-        <strong style="color:#f5c542;">🤖 Sistema Automático Ativo</strong>
-        <p>{{ total_jogos }} jogos distribuídos automaticamente nas 24 horas.<br>
-        Horários e estratégias mudam sozinhos todo dia. Nenhuma ação necessária!</p>
+        <strong style="color:#d4af37;">🤖 Sistema 24h Ativo</strong>
+        <p>
+            Os jogos são distribuídos automaticamente ao longo das 24 horas do dia.<br>
+            À meia-noite a escala reinicia sozinha e continua rodando sem parar.
+        </p>
     </div>
+
     <div class="card">
         <h2>📅 Escala de hoje — {{ data_hoje }}</h2>
         <table>
-            <tr><th>Horário</th><th>Jogo</th><th>Status</th></tr>
+            <tr>
+                <th>Horário</th>
+                <th>Jogo</th>
+                <th>Status</th>
+            </tr>
             {% for item in escala %}
             <tr class="{{ 'proximo' if item.proximo else '' }}">
                 <td>{{ item.horario }}</td>
@@ -281,21 +424,30 @@ HTML = """
 
 @app.route("/")
 def painel():
+    limpar_enviados_antigos()
+
     agora_dt = datetime.now(FUSO)
     agora = agora_dt.strftime("%H:%M")
     data_hoje = agora_dt.strftime("%Y-%m-%d")
-    escala_raw = gerar_escala_diaria()
+    agora_minutos = agora_dt.hour * 60 + agora_dt.minute
+
+    escala_raw = obter_escala_diaria()
     escala = []
     enviados_count = 0
     proximo_marcado = False
+
     for jogo, horario in escala_raw:
+        horario_minutos = horario_para_minutos(horario)
         env = ja_enviado(data_hoje, jogo, horario)
+
         if env:
             enviados_count += 1
+
         proximo = False
-        if not env and not proximo_marcado and horario >= agora:
+        if not env and not proximo_marcado and horario_minutos >= agora_minutos:
             proximo = True
             proximo_marcado = True
+
         escala.append({
             "horario": horario,
             "jogo": jogo,
@@ -303,7 +455,15 @@ def painel():
             "enviado": env,
             "proximo": proximo,
         })
-    return render_template_string(HTML,
+
+    if not proximo_marcado:
+        for item in escala:
+            if not item["enviado"]:
+                item["proximo"] = True
+                break
+
+    return render_template_string(
+        HTML,
         agora=agora,
         data_hoje=data_hoje,
         escala=escala,
@@ -314,18 +474,35 @@ def painel():
 
 
 def verificar_e_enviar():
+    ultimo_dia_verificado = None
+
     while True:
-        agora = datetime.now(FUSO)
-        hora_atual = agora.strftime("%H:%M")
-        data_hoje = agora.strftime("%Y-%m-%d")
-        escala = gerar_escala_diaria()
-        for jogo, horario in escala:
-            if horario == hora_atual and not ja_enviado(data_hoje, jogo, horario):
-                texto = gerar_mensagem(jogo)
-                enviar_telegram(texto)
-                registrar_envio(data_hoje, jogo, horario)
-                print(f"Enviado: {jogo} às {horario}")
-        time.sleep(20)
+        try:
+            agora = datetime.now(FUSO)
+            data_hoje = agora.strftime("%Y-%m-%d")
+            hora_atual = agora.strftime("%H:%M")
+
+            if ultimo_dia_verificado != data_hoje:
+                limpar_enviados_antigos()
+                escala_cache.clear()
+                obter_escala_diaria()
+                ultimo_dia_verificado = data_hoje
+                print(f"Nova escala carregada para {data_hoje}")
+
+            escala = obter_escala_diaria()
+
+            for jogo, horario in escala:
+                if horario == hora_atual and not ja_enviado(data_hoje, jogo, horario):
+                    texto = gerar_mensagem(jogo)
+                    enviar_telegram(texto)
+                    registrar_envio(data_hoje, jogo, horario)
+                    print(f"Enviado: {jogo} às {horario}")
+
+            time.sleep(15)
+
+        except Exception as e:
+            print(f"Erro no loop principal: {e}")
+            time.sleep(15)
 
 
 threading.Thread(target=verificar_e_enviar, daemon=True).start()
