@@ -1,1 +1,2 @@
-web: gunicorn app:app --workers 1 --threads 2 --worker-class gthread
+web: gunicorn app:app
+worker: python scheduler.py
