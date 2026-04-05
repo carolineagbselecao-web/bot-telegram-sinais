@@ -1,2 +1,1 @@
-web: gunicorn app:app
-worker: python scheduler.py
+web: gunicorn app:app --worker-class gevent --workers 1
