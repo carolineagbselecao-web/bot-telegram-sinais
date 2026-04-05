@@ -558,13 +558,26 @@ def get_due_unsent_items(limit=5):
     return rows
 
 
+def claim_plan_item(plan_id):
+    conn = db()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE daily_plan
+        SET sent = 1
+        WHERE id = ? AND sent = 0
+    """, (plan_id,))
+    conn.commit()
+    claimed = cur.rowcount > 0
+    conn.close()
+    return claimed
+
+
 def log_send(plan_row, ok, response):
     conn = db()
 
     conn.execute("""
         UPDATE daily_plan
-        SET sent = 1,
-            sent_at = ?,
+        SET sent_at = ?,
             telegram_status = ?,
             telegram_response = ?
         WHERE id = ?
@@ -654,6 +667,9 @@ def scheduler_loop():
             hero_image_url = get_setting("hero_image_url", "").strip()
 
             for item in due_items:
+                if not claim_plan_item(item["id"]):
+                    continue
+
                 msg = build_message_for_game(
                     plan_date=item["plan_date"],
                     position=item["position"],
@@ -665,6 +681,7 @@ def scheduler_loop():
                         "emoji": item["emoji"],
                     }
                 )
+
                 ok, response = telegram_send(msg, hero_image_url)
                 log_send(item, ok, response)
 
