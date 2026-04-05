@@ -26,7 +26,7 @@ DEFAULT_ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456").strip()
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
 
 # Janela interna automática do sistema
-AUTO_START_TIME = "18:15"
+AUTO_START_TIME = "18:30"
 AUTO_END_TIME = "23:58"
 
 # Tempo do loop
