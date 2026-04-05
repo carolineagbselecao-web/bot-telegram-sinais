@@ -25,18 +25,16 @@ DEFAULT_ADMIN_USER = os.getenv("ADMIN_USER", "admin").strip()
 DEFAULT_ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456").strip()
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
 
-# 24H + agressivo
 AUTO_START_TIME = "00:00"
 AUTO_END_TIME = "23:59"
 SEND_INTERVAL_MINUTES = 3
 
-# loop
 SCHEDULER_SLEEP_SECONDS = 10
-
-# não mandar enxurrada quando o servidor voltar
 MAX_LATE_MINUTES = 10
 
-# botão fixo
+# Tempo máximo de lock em segundos — se travado há mais que isso, considera morto e ignora
+LOCK_TIMEOUT_SECONDS = 60
+
 DEFAULT_FOOTER_LINK = "https://beacons.ai/rainhagames"
 DEFAULT_FOOTER_TEXT = "👑 A RAINHA JOGA AQUI"
 
@@ -46,11 +44,6 @@ app.secret_key = SECRET_KEY
 # =========================================================
 # CATÁLOGO BASE
 # =========================================================
-# Observação honesta:
-# Aqui eu incluí uma base grande e organizada com os títulos que apareceram
-# de forma consistente no seu histórico. Como você quer FULL pesado 500+ da SUA casa,
-# o painel abaixo também tem importação em massa para completar o catálogo exato sem chute.
-
 PROVIDER_GAMES = {
     "PG Soft": [
         ("Fortune Tiger", "96.81%", "🐯"),
@@ -488,6 +481,8 @@ CRASH_PROVIDERS = {"Spribe", "Original", "Betby", "Easybet", "1Bet", "Pateplay"}
 def db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    # WAL mode: permite leituras concorrentes sem bloquear escritas
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 
@@ -594,9 +589,16 @@ def init_db():
             sent_at TEXT DEFAULT '',
             telegram_status TEXT DEFAULT '',
             telegram_response TEXT DEFAULT '',
+            locked_at TEXT DEFAULT '',
             UNIQUE(plan_date, position)
         )
     """)
+
+    # Adiciona coluna locked_at se já existir a tabela sem ela (migração segura)
+    try:
+        cur.execute("ALTER TABLE daily_plan ADD COLUMN locked_at TEXT DEFAULT ''")
+    except Exception:
+        pass
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS sent_log (
@@ -848,8 +850,6 @@ def ensure_daily_plan(day_str: str):
     rng = random.Random(stable_seed_for_day(day_str))
     rng.shuffle(games_list)
 
-    # FULL pesado 24h:
-    # se faltar jogo para preencher todos os slots, repete o catálogo de forma embaralhada
     needed = len(slots)
     selected_games = []
     while len(selected_games) < needed:
@@ -863,8 +863,8 @@ def ensure_daily_plan(day_str: str):
         send_at = slots[position - 1].strftime("%Y-%m-%d %H:%M:%S")
         conn.execute("""
             INSERT OR IGNORE INTO daily_plan
-            (plan_date, position, game_id, send_at, sent, sent_at, telegram_status, telegram_response)
-            VALUES (?, ?, ?, ?, 0, '', '', '')
+            (plan_date, position, game_id, send_at, sent, sent_at, telegram_status, telegram_response, locked_at)
+            VALUES (?, ?, ?, ?, 0, '', '', '', '')
         """, (day_str, position, game_row["id"], send_at))
 
     conn.commit()
@@ -877,6 +877,8 @@ def get_due_unsent_items(limit=20):
 
     now_dt = now_br()
     cutoff_dt = now_dt - timedelta(minutes=get_max_late_minutes())
+    # Itens travados há mais que LOCK_TIMEOUT_SECONDS são considerados mortos (processo travou)
+    lock_cutoff = (now_dt - timedelta(seconds=LOCK_TIMEOUT_SECONDS)).strftime("%Y-%m-%d %H:%M:%S")
 
     conn = db()
     rows = conn.execute("""
@@ -887,16 +889,45 @@ def get_due_unsent_items(limit=20):
           AND dp.sent = 0
           AND dp.send_at <= ?
           AND dp.send_at >= ?
+          AND (dp.locked_at = '' OR dp.locked_at <= ?)
         ORDER BY dp.position ASC
         LIMIT ?
     """, (
         day_str,
         now_dt.strftime("%Y-%m-%d %H:%M:%S"),
         cutoff_dt.strftime("%Y-%m-%d %H:%M:%S"),
+        lock_cutoff,
         limit
     )).fetchall()
     conn.close()
     return rows
+
+
+def try_lock_item(item_id: int) -> bool:
+    """
+    Tenta travar o item atomicamente.
+    Retorna True se conseguiu travar (era sent=0 e locked_at vazio ou expirado).
+    Retorna False se outro processo já travou (duplicidade bloqueada).
+    """
+    now_dt = now_br()
+    lock_cutoff = (now_dt - timedelta(seconds=LOCK_TIMEOUT_SECONDS)).strftime("%Y-%m-%d %H:%M:%S")
+    now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = db()
+    try:
+        result = conn.execute("""
+            UPDATE daily_plan
+            SET locked_at = ?, sent = 1
+            WHERE id = ?
+              AND sent = 0
+              AND (locked_at = '' OR locked_at <= ?)
+        """, (now_str, item_id, lock_cutoff))
+        conn.commit()
+        return result.rowcount == 1
+    except Exception:
+        return False
+    finally:
+        conn.close()
 
 
 def finalize_send_log(plan_row, ok, response):
@@ -990,19 +1021,12 @@ def scheduler_loop():
             hero_image_url = get_setting("hero_image_url", "").strip()
 
             for item in due_items:
-                # TRAVA ANTES DE ENVIAR -> corrige duplicidade
-                conn = db()
-                updated = conn.execute("""
-                    UPDATE daily_plan
-                    SET sent = 1
-                    WHERE id = ? AND sent = 0
-                """, (item["id"],))
-                conn.commit()
-                rowcount = updated.rowcount
-                conn.close()
-
-                # já foi travado por outro loop/instância
-                if rowcount == 0:
+                # ✅ LOCK ATÔMICO ANTI-DUPLICIDADE
+                # Se dois processos chegarem aqui ao mesmo tempo,
+                # apenas UM consegue gravar o locked_at + sent=1
+                # O outro recebe rowcount=0 e pula
+                locked = try_lock_item(item["id"])
+                if not locked:
                     continue
 
                 msg = build_message_for_game(
@@ -1191,6 +1215,65 @@ th{
     }
 }
 </style>
+<script>
+// Auto-refresh do painel a cada 20 segundos via AJAX (só na página do painel)
+(function(){
+    function isDashboard(){
+        return window.location.pathname === '/' || window.location.pathname === '';
+    }
+    if(!isDashboard()) return;
+
+    function updateDashboard(){
+        fetch('/api/dashboard-stats')
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+                // KPIs
+                var els = {
+                    'kpi-jogos': d.total_games,
+                    'kpi-providers': d.total_providers,
+                    'kpi-sent': d.sent_today,
+                    'kpi-pending': d.pending_today,
+                    'kpi-hora': d.hora_atual,
+                    'kpi-first': d.first_time,
+                    'kpi-last': d.last_time,
+                    'kpi-last-game': d.last_game,
+                    'kpi-last-time': d.last_send_time,
+                    'kpi-last-status': d.last_status,
+                };
+                Object.keys(els).forEach(function(id){
+                    var el = document.getElementById(id);
+                    if(el && els[id] !== undefined) el.textContent = els[id];
+                });
+
+                // Preview próxima mensagem
+                var prev = document.getElementById('preview-next');
+                if(prev && d.preview) prev.textContent = d.preview;
+
+                // Tabela de últimos envios
+                var tbody = document.getElementById('tbody-logs');
+                if(tbody && d.logs){
+                    tbody.innerHTML = d.logs.map(function(row){
+                        var badge = row.status === 'ok'
+                            ? '<span class="badge badge-success">ok</span>'
+                            : '<span class="badge badge-gold">' + (row.status || '-') + '</span>';
+                        return '<tr><td>'+row.date+'</td><td>'+row.time+'</td><td>'+row.game+'</td><td>'+row.provider+'</td><td>'+badge+'</td></tr>';
+                    }).join('');
+                }
+
+                // Indicador visual discreto
+                var ind = document.getElementById('refresh-indicator');
+                if(ind){
+                    ind.style.opacity = '1';
+                    setTimeout(function(){ ind.style.opacity = '0'; }, 800);
+                }
+            })
+            .catch(function(){});
+    }
+
+    // Primeira atualização após 20s, depois repete
+    setInterval(updateDashboard, 20000);
+})();
+</script>
 </head>
 <body>
 <div class="topbar">
@@ -1348,25 +1431,30 @@ def dashboard():
     last_time_text = datetime.strptime(last_time["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M") if last_time else "-"
 
     html = f"""
+    <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px;gap:10px;">
+        <span id="refresh-indicator" style="font-size:12px;color:#39d98a;opacity:0;transition:opacity .4s;">● atualizado</span>
+        <span class="muted" style="font-size:12px;">⟳ Painel atualiza automaticamente a cada 20s</span>
+    </div>
+
     <div class="grid grid-3">
         <div class="card">
             <div class="sub">Jogos no catálogo</div>
-            <div class="kpi">{total_games}</div>
+            <div class="kpi" id="kpi-jogos">{total_games}</div>
         </div>
         <div class="card">
             <div class="sub">Provedoras</div>
-            <div class="kpi">{total_providers}</div>
+            <div class="kpi" id="kpi-providers">{total_providers}</div>
         </div>
         <div class="card">
             <div class="sub">Envios feitos hoje</div>
-            <div class="kpi">{sent_today}</div>
+            <div class="kpi" id="kpi-sent">{sent_today}</div>
         </div>
     </div>
 
     <div class="grid grid-2" style="margin-top:18px;">
         <div class="card">
             <h2>Próxima mensagem automática</h2>
-            <div class="preview">{preview}</div>
+            <div class="preview" id="preview-next">{preview}</div>
             <div class="muted" style="margin-top:12px;">
                 O botão "{get_setting("footer_text", DEFAULT_FOOTER_TEXT)}" é enviado automaticamente em todas as mensagens.
             </div>
@@ -1376,9 +1464,9 @@ def dashboard():
             <div class="card">
                 <h3>Status do sistema</h3>
                 <div class="sub">Horário atual Brasil</div>
-                <div class="kpi">{now_br().strftime("%H:%M:%S")}</div>
+                <div class="kpi" id="kpi-hora">{now_br().strftime("%H:%M:%S")}</div>
 
-                <div class="sub" style="margin-top:12px;">Janela automática interna</div>
+                <div class="sub" style="margin-top:12px;">Janela automática</div>
                 <div class="preview">{get_setting("auto_start_time", AUTO_START_TIME)} até {get_setting("auto_end_time", AUTO_END_TIME)}</div>
 
                 <div class="sub" style="margin-top:12px;">Intervalo entre envios</div>
@@ -1388,25 +1476,25 @@ def dashboard():
                 <div>{get_max_late_minutes()} minutos</div>
 
                 <div class="sub" style="margin-top:12px;">Primeiro horário de hoje</div>
-                <div>{first_time_text}</div>
+                <div id="kpi-first">{first_time_text}</div>
 
                 <div class="sub" style="margin-top:12px;">Último horário de hoje</div>
-                <div>{last_time_text}</div>
+                <div id="kpi-last">{last_time_text}</div>
 
                 <div class="sub" style="margin-top:12px;">Pendentes hoje</div>
-                <div>{pending_today}</div>
+                <div id="kpi-pending">{pending_today}</div>
             </div>
 
             <div class="card">
                 <h3>Último envio</h3>
                 <div class="sub">Jogo</div>
-                <div>{last_log["game_name"] if last_log else "Ainda não houve envio"}</div>
+                <div id="kpi-last-game">{last_log["game_name"] if last_log else "Ainda não houve envio"}</div>
 
                 <div class="sub" style="margin-top:10px;">Hora</div>
-                <div>{last_log["send_time"] if last_log else "-"}</div>
+                <div id="kpi-last-time">{last_log["send_time"] if last_log else "-"}</div>
 
                 <div class="sub" style="margin-top:10px;">Status</div>
-                <div>{last_log["telegram_status"] if last_log else "-"}</div>
+                <div id="kpi-last-status">{last_log["telegram_status"] if last_log else "-"}</div>
             </div>
         </div>
     </div>
@@ -1430,7 +1518,7 @@ def dashboard():
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody>{rows_html}</tbody>
+                <tbody id="tbody-logs">{rows_html}</tbody>
             </table>
         </div>
     </div>
@@ -1585,9 +1673,6 @@ def admin_catalog():
             bulk_text = request.form.get("bulk_text", "").strip()
             added = 0
 
-            # formato:
-            # Provedora | Nome do jogo | RTP opcional | Emoji opcional
-            # uma linha por jogo
             for raw_line in bulk_text.splitlines():
                 line = raw_line.strip()
                 if not line:
@@ -1841,6 +1926,78 @@ def admin_rebuild_plan():
     ensure_daily_plan(today_str())
     flash("Agenda automática de hoje foi regerada.")
     return redirect(url_for("dashboard"))
+
+# =========================================================
+# API — DASHBOARD STATS (usado pelo auto-refresh AJAX)
+# =========================================================
+@app.route("/api/dashboard-stats")
+@require_login
+def api_dashboard_stats():
+    from flask import jsonify
+    ensure_daily_plan(today_str())
+
+    conn = db()
+    total_games = conn.execute("SELECT COUNT(*) AS total FROM games").fetchone()["total"]
+    total_providers = conn.execute("SELECT COUNT(DISTINCT provider) AS total FROM games").fetchone()["total"]
+    sent_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND telegram_status = 'ok'", (today_str(),)).fetchone()["total"]
+    pending_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND sent = 0", (today_str(),)).fetchone()["total"]
+    first_time = conn.execute("SELECT send_at FROM daily_plan WHERE plan_date = ? ORDER BY position ASC LIMIT 1", (today_str(),)).fetchone()
+    last_time = conn.execute("SELECT send_at FROM daily_plan WHERE plan_date = ? ORDER BY position DESC LIMIT 1", (today_str(),)).fetchone()
+    last_log = conn.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 1").fetchone()
+    next_item = conn.execute("""
+        SELECT dp.*, g.name AS game_name, g.provider, g.rtp, g.emoji, g.game_type
+        FROM daily_plan dp
+        JOIN games g ON g.id = dp.game_id
+        WHERE dp.plan_date = ? AND dp.sent = 0
+        ORDER BY dp.position ASC
+        LIMIT 1
+    """, (today_str(),)).fetchone()
+    recent_logs = conn.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 12").fetchall()
+    conn.close()
+
+    preview = "Nenhuma prévia disponível."
+    if next_item:
+        preview = build_message_for_game(
+            plan_date=next_item["plan_date"],
+            position=next_item["position"],
+            game_row={
+                "id": next_item["game_id"],
+                "name": next_item["game_name"],
+                "provider": next_item["provider"],
+                "rtp": next_item["rtp"],
+                "emoji": next_item["emoji"],
+                "game_type": next_item["game_type"],
+            }
+        )
+
+    first_time_text = datetime.strptime(first_time["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M") if first_time else "-"
+    last_time_text = datetime.strptime(last_time["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M") if last_time else "-"
+
+    logs_data = []
+    for row in recent_logs:
+        logs_data.append({
+            "date": row["send_date"],
+            "time": row["send_time"],
+            "game": row["game_name"] or "-",
+            "provider": row["provider"] or "-",
+            "status": row["telegram_status"] or "-",
+        })
+
+    return jsonify({
+        "total_games": total_games,
+        "total_providers": total_providers,
+        "sent_today": sent_today,
+        "pending_today": pending_today,
+        "hora_atual": now_br().strftime("%H:%M:%S"),
+        "first_time": first_time_text,
+        "last_time": last_time_text,
+        "last_game": last_log["game_name"] if last_log else "Ainda não houve envio",
+        "last_send_time": last_log["send_time"] if last_log else "-",
+        "last_status": last_log["telegram_status"] if last_log else "-",
+        "preview": preview,
+        "logs": logs_data,
+    })
+
 
 # =========================================================
 # START
