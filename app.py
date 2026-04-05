@@ -25,12 +25,15 @@ DEFAULT_ADMIN_USER = os.getenv("ADMIN_USER", "admin").strip()
 DEFAULT_ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456").strip()
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
 
-# Janela interna automática do sistema
+# Janela automática padrão
 AUTO_START_TIME = "15:10"
 AUTO_END_TIME = "23:58"
 
+# AGRESSIVO: 1 sinal a cada 3 minutos
+SEND_INTERVAL_MINUTES = 3
+
 # Tempo do loop
-SCHEDULER_SLEEP_SECONDS = 15
+SCHEDULER_SLEEP_SECONDS = 10
 
 # Link fixo do botão
 DEFAULT_FOOTER_LINK = "https://beacons.ai/rainhagames"
@@ -345,6 +348,7 @@ def init_db():
     seed_setting(cur, "hero_image_url", "")
     seed_setting(cur, "auto_start_time", AUTO_START_TIME)
     seed_setting(cur, "auto_end_time", AUTO_END_TIME)
+    seed_setting(cur, "send_interval_minutes", str(SEND_INTERVAL_MINUTES))
 
     cur.execute("SELECT id FROM users WHERE username = ?", (DEFAULT_ADMIN_USER,))
     if not cur.fetchone():
@@ -354,10 +358,23 @@ def init_db():
         """, (DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASSWORD, now_br_str()))
 
     plans = [
-        ("Free", "R$ 0,00", "Acesso básico|Painel padrão|Uso simples"),
-        ("VIP", "R$ 97,00", "Mais recursos|Mais personalização|Prioridade"),
-        ("Premium", "R$ 297,00", "White label|Área admin e cliente|Personalização total"),
+        (
+            "Free",
+            "R$ 0,00",
+            "Acesso a alguns sinais do dia|Estratégias padrão (simplificadas)|Acesso ao grupo|Sem prioridade nas entradas|Suporte exclusivo para VIP e Premium"
+        ),
+        (
+            "VIP",
+            "R$ 97,00",
+            "Acesso completo aos sinais|Estratégias completas estilo premium|Prioridade nas entradas|Acesso ao grupo VIP|Método validado na prática"
+        ),
+        (
+            "Premium",
+            "R$ 297,00",
+            "Tudo do VIP|Acesso antecipado aos sinais|Estratégias agressivas exclusivas|Suporte prioritário|White label e personalização total"
+        ),
     ]
+
     for name, price, features in plans:
         cur.execute("SELECT id FROM plans WHERE name = ?", (name,))
         if not cur.fetchone():
@@ -376,15 +393,6 @@ def init_db():
 
     conn.commit()
     conn.close()
-
-    ensure_current_start_time()
-
-
-def ensure_current_start_time():
-    desired = AUTO_START_TIME
-    current = get_setting("auto_start_time", desired)
-    if current != desired:
-        set_setting("auto_start_time", desired)
 
 
 # =========================================================
@@ -434,7 +442,12 @@ def build_message_for_game(plan_date: str, position: int, game_row):
     intro = choose_variant(INTRO_VARIANTS, plan_date, game_row["id"], "intro")
     closing = choose_variant(CLOSING_VARIANTS, plan_date, game_row["id"], "closing")
     strategy_name = choose_strategy_for_position(position)
-    strategy_text = choose_variant(STRATEGY_VARIANTS[strategy_name], plan_date, game_row["id"], "strategy")
+    strategy_text = choose_variant(
+        STRATEGY_VARIANTS[strategy_name],
+        plan_date,
+        game_row["id"],
+        "strategy"
+    )
 
     provider_line = f"🏢 Provedora: {game_row['provider']}\n" if game_row["provider"] else ""
     rtp_line = f"📊 RTP: {game_row['rtp']}\n" if game_row["rtp"] else "📊 RTP: Verificado ✅\n"
@@ -449,10 +462,16 @@ def build_message_for_game(plan_date: str, position: int, game_row):
     )
 
 
-def build_send_slots_for_day(day_str: str, total_games: int):
-    if total_games <= 0:
-        return []
+def get_interval_minutes():
+    raw = get_setting("send_interval_minutes", str(SEND_INTERVAL_MINUTES)).strip()
+    try:
+        value = int(raw)
+        return max(1, value)
+    except Exception:
+        return SEND_INTERVAL_MINUTES
 
+
+def get_day_window(day_str: str):
     start_time = get_setting("auto_start_time", AUTO_START_TIME)
     end_time = get_setting("auto_end_time", AUTO_END_TIME)
 
@@ -464,48 +483,31 @@ def build_send_slots_for_day(day_str: str, total_games: int):
     end_dt = datetime(day_obj.year, day_obj.month, day_obj.day, eh, em, 0, tzinfo=APP_TZ)
 
     if end_dt <= start_dt:
-        end_dt = start_dt + timedelta(hours=6)
+        end_dt = start_dt + timedelta(hours=8)
 
-    total_seconds = int((end_dt - start_dt).total_seconds())
+    return start_dt, end_dt
 
-    if total_games == 1:
-        return [start_dt]
 
-    base_step = max(60, total_seconds // total_games)
+def build_send_slots_for_day(day_str: str, total_games: int):
+    if total_games <= 0:
+        return []
 
-    rng = random.Random(stable_seed_for_day(day_str))
+    start_dt, end_dt = get_day_window(day_str)
+    interval_minutes = get_interval_minutes()
+    step = timedelta(minutes=interval_minutes)
+
     slots = []
     current = start_dt
-
-    for i in range(total_games):
-        if i == 0:
-            send_time = current
-        else:
-            jitter = rng.randint(-20, 20)
-            send_time = current + timedelta(seconds=jitter)
-            if send_time <= slots[-1]:
-                send_time = slots[-1] + timedelta(minutes=1)
-
-        if send_time > end_dt:
-            send_time = end_dt
-
-        slots.append(send_time)
-        current = current + timedelta(seconds=base_step)
-
-    for i in range(1, len(slots)):
-        if slots[i] <= slots[i - 1]:
-            slots[i] = slots[i - 1] + timedelta(minutes=1)
-
-    overflow = slots[-1] - end_dt
-    if overflow.total_seconds() > 0:
-        shift_back = int(overflow.total_seconds())
-        slots = [dt - timedelta(seconds=shift_back) for dt in slots]
+    while current <= end_dt and len(slots) < total_games:
+        slots.append(current)
+        current += step
 
     return slots
 
 
 def ensure_daily_plan(day_str: str):
     conn = db()
+
     existing = conn.execute("""
         SELECT COUNT(*) AS total
         FROM daily_plan
@@ -521,13 +523,18 @@ def ensure_daily_plan(day_str: str):
         conn.close()
         return
 
-    games_list = list(games)
+    all_games = list(games)
     rng = random.Random(stable_seed_for_day(day_str))
-    rng.shuffle(games_list)
+    rng.shuffle(all_games)
 
-    slots = build_send_slots_for_day(day_str, len(games_list))
+    slots = build_send_slots_for_day(day_str, len(all_games))
+    if not slots:
+        conn.close()
+        return
 
-    for position, game_row in enumerate(games_list, start=1):
+    selected_games = all_games[:len(slots)]
+
+    for position, game_row in enumerate(selected_games, start=1):
         send_at = slots[position - 1].strftime("%Y-%m-%d %H:%M:%S")
         conn.execute("""
             INSERT OR IGNORE INTO daily_plan
@@ -558,21 +565,7 @@ def get_due_unsent_items(limit=5):
     return rows
 
 
-def claim_plan_item(plan_id):
-    conn = db()
-    cur = conn.cursor()
-    cur.execute("""
-        UPDATE daily_plan
-        SET sent = 1
-        WHERE id = ? AND sent = 0
-    """, (plan_id,))
-    conn.commit()
-    claimed = cur.rowcount > 0
-    conn.close()
-    return claimed
-
-
-def log_send(plan_row, ok, response):
+def finalize_send_log(plan_row, ok, response):
     conn = db()
 
     conn.execute("""
@@ -658,16 +651,25 @@ def telegram_send(text, image_url=""):
 def scheduler_loop():
     while True:
         try:
-            ensure_current_start_time()
             ensure_daily_plan(today_str())
             tomorrow = (today_date() + timedelta(days=1)).strftime("%Y-%m-%d")
             ensure_daily_plan(tomorrow)
 
-            due_items = get_due_unsent_items(limit=10)
+            due_items = get_due_unsent_items(limit=20)
             hero_image_url = get_setting("hero_image_url", "").strip()
 
             for item in due_items:
-                if not claim_plan_item(item["id"]):
+                # trava no banco ANTES de enviar
+                conn = db()
+                updated = conn.execute("""
+                    UPDATE daily_plan
+                    SET sent = 1
+                    WHERE id = ? AND sent = 0
+                """, (item["id"],))
+                conn.commit()
+                conn.close()
+
+                if updated.rowcount == 0:
                     continue
 
                 msg = build_message_for_game(
@@ -683,9 +685,10 @@ def scheduler_loop():
                 )
 
                 ok, response = telegram_send(msg, hero_image_url)
-                log_send(item, ok, response)
+                finalize_send_log(item, ok, response)
 
             time.sleep(SCHEDULER_SLEEP_SECONDS)
+
         except Exception:
             time.sleep(SCHEDULER_SLEEP_SECONDS)
 
@@ -956,7 +959,7 @@ def dashboard():
     conn = db()
     total_games = conn.execute("SELECT COUNT(*) AS total FROM games").fetchone()["total"]
     total_users = conn.execute("SELECT COUNT(*) AS total FROM users WHERE is_active = 1").fetchone()["total"]
-    sent_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND sent = 1", (today_str(),)).fetchone()["total"]
+    sent_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND telegram_status = 'ok'", (today_str(),)).fetchone()["total"]
     pending_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND sent = 0", (today_str(),)).fetchone()["total"]
     first_time = conn.execute("SELECT send_at FROM daily_plan WHERE plan_date = ? ORDER BY position ASC LIMIT 1", (today_str(),)).fetchone()
     last_time = conn.execute("SELECT send_at FROM daily_plan WHERE plan_date = ? ORDER BY position DESC LIMIT 1", (today_str(),)).fetchone()
@@ -1040,6 +1043,9 @@ def dashboard():
                 <div class="sub" style="margin-top:12px;">Janela automática interna</div>
                 <div class="preview">{get_setting("auto_start_time", AUTO_START_TIME)} até {get_setting("auto_end_time", AUTO_END_TIME)}</div>
 
+                <div class="sub" style="margin-top:12px;">Intervalo entre envios</div>
+                <div>{get_interval_minutes()} minutos</div>
+
                 <div class="sub" style="margin-top:12px;">Primeiro horário de hoje</div>
                 <div>{first_time_text}</div>
 
@@ -1121,12 +1127,13 @@ def sales_plans():
 @require_admin
 def admin_users():
     conn = db()
+
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
         role = request.form.get("role", "client").strip()
         plan = request.form.get("plan", "Free").strip()
-        brand_name = request.form.get("brand_name", "Rainha Games").strip() or "Rainha Games"
+        brand_name = request.form.get("brand_name", "Rainha Games").strip()
 
         if username and password:
             try:
@@ -1136,24 +1143,25 @@ def admin_users():
                 """, (username, password, role, plan, brand_name, now_br_str()))
                 conn.commit()
                 flash("Usuário criado com sucesso.")
-            except sqlite3.IntegrityError:
-                flash("Esse usuário já existe.")
-        else:
-            flash("Preencha usuário e senha.")
+            except Exception as e:
+                flash(f"Erro ao criar usuário: {e}")
 
-    rows = conn.execute("SELECT * FROM users ORDER BY id DESC").fetchall()
+        return redirect(url_for("admin_users"))
+
+    users = conn.execute("""
+        SELECT * FROM users
+        ORDER BY id DESC
+    """).fetchall()
     conn.close()
 
-    trs = ""
-    for u in rows:
-        badge = "badge-gold" if u["role"] == "admin" else "badge-success"
-        trs += f"""
+    rows = ""
+    for u in users:
+        rows += f"""
         <tr>
             <td>{u['id']}</td>
             <td>{u['username']}</td>
-            <td><span class="badge {badge}">{u['role']}</span></td>
+            <td>{u['role']}</td>
             <td>{u['plan']}</td>
-            <td>{u['brand_name']}</td>
             <td>{"Ativo" if u['is_active'] else "Inativo"}</td>
         </tr>
         """
@@ -1161,28 +1169,34 @@ def admin_users():
     html = f"""
     <div class="grid grid-2">
         <div class="card">
-            <h2>Novo usuário</h2>
+            <h2>Criar usuário</h2>
             <form method="post">
                 <label>Usuário</label>
                 <input name="username" required>
+
                 <label>Senha</label>
                 <input name="password" required>
-                <label>Perfil</label>
+
+                <label>Tipo</label>
                 <select name="role">
                     <option value="client">Cliente</option>
                     <option value="admin">Admin</option>
                 </select>
+
                 <label>Plano</label>
                 <select name="plan">
-                    <option>Free</option>
-                    <option>VIP</option>
-                    <option>Premium</option>
+                    <option value="Free">Free</option>
+                    <option value="VIP">VIP</option>
+                    <option value="Premium">Premium</option>
                 </select>
-                <label>Marca do cliente</label>
+
+                <label>Marca</label>
                 <input name="brand_name" value="Rainha Games">
+
                 <button type="submit">Criar usuário</button>
             </form>
         </div>
+
         <div class="card">
             <h2>Usuários cadastrados</h2>
             <div class="table-wrap">
@@ -1191,13 +1205,12 @@ def admin_users():
                         <tr>
                             <th>ID</th>
                             <th>Usuário</th>
-                            <th>Perfil</th>
+                            <th>Tipo</th>
                             <th>Plano</th>
-                            <th>Marca</th>
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>{trs}</tbody>
+                    <tbody>{rows}</tbody>
                 </table>
             </div>
         </div>
@@ -1210,13 +1223,14 @@ def admin_users():
 @require_admin
 def admin_settings():
     if request.method == "POST":
-        set_setting("brand_name", request.form.get("brand_name", "Rainha Games").strip() or "Rainha Games")
-        set_setting("footer_text", request.form.get("footer_text", DEFAULT_FOOTER_TEXT).strip() or DEFAULT_FOOTER_TEXT)
-        set_setting("footer_link", request.form.get("footer_link", DEFAULT_FOOTER_LINK).strip() or DEFAULT_FOOTER_LINK)
-        set_setting("theme_primary", request.form.get("theme_primary", "#B3001B").strip() or "#B3001B")
-        set_setting("theme_secondary", request.form.get("theme_secondary", "#D4AF37").strip() or "#D4AF37")
-        set_setting("theme_dark", request.form.get("theme_dark", "#0B0B0F").strip() or "#0B0B0F")
+        set_setting("brand_name", request.form.get("brand_name", "").strip() or "Rainha Games")
+        set_setting("footer_text", request.form.get("footer_text", "").strip() or DEFAULT_FOOTER_TEXT)
+        set_setting("footer_link", request.form.get("footer_link", "").strip() or DEFAULT_FOOTER_LINK)
         set_setting("hero_image_url", request.form.get("hero_image_url", "").strip())
+        set_setting("theme_primary", request.form.get("theme_primary", "").strip() or "#B3001B")
+        set_setting("theme_secondary", request.form.get("theme_secondary", "").strip() or "#D4AF37")
+        set_setting("theme_dark", request.form.get("theme_dark", "").strip() or "#0B0B0F")
+
         flash("Configurações salvas.")
         return redirect(url_for("admin_settings"))
 
@@ -1295,7 +1309,7 @@ def admin_test_send():
 @require_admin
 def admin_rebuild_plan():
     conn = db()
-    conn.execute("DELETE FROM daily_plan WHERE plan_date = ? AND sent = 0", (today_str(),))
+    conn.execute("DELETE FROM daily_plan WHERE plan_date = ?", (today_str(),))
     conn.commit()
     conn.close()
 
