@@ -339,9 +339,20 @@ PROVIDER_GAMES = {
         ("Dragon Fortune Spirit", "", "🐉"),
     ],
     "Original": [
-        ("Crash", "", "💥"),
-        ("Limbo", "", "🎯"),
-        ("Dice Original", "", "🎲"),
+        ("Aviator", "97.00%", "✈️"),
+        ("Classic Dice", "99.00%", "🎲"),
+        ("Dice", "99.00%", "🎲"),
+        ("Doctor Rocket", "97.00%", "🚀"),
+        ("Football Scratch", "97.00%", "⚽"),
+        ("Heads Tails", "97.00%", "🪙"),
+        ("HiLo", "99.00%", "🃏"),
+        ("Limbo", "99.00%", "🎯"),
+        ("Lucky Wheel", "97.00%", "🎡"),
+        ("Mines", "99.00%", "💣"),
+        ("Mines2", "99.00%", "💣"),
+        ("Penalty Shootout", "97.00%", "⚽"),
+        ("Plinko", "99.00%", "🔴"),
+        ("Tower", "97.00%", "🗼"),
     ],
     "Betby": [
         ("Betby Dice", "", "🎲"),
@@ -469,6 +480,10 @@ STRATEGY_VARIANTS = {
         "💎 Estilo Premium Crash:\n• Entrar com 3% da banca\n• Buscar saída entre 1.5x e 2x\n• Não perseguir multiplicador alto\n• Se perder 3 seguidas, pausar 5 minutos",
         "💎 Estilo Premium Crash:\n• Entrada pequena e fixa\n• Saída antecipada sem hesitar\n• No máximo 5 rodadas por sessão\n• Stop loss: 15% da banca",
     ],
+    "aviator": [
+        "💎 Estilo Premium Aviator:\n• Entre com 3% da banca\n• Retire entre 1.5x e 2x sem hesitar\n• Não persiga multiplicadores altos\n• Stop loss: 3 derrotas seguidas = pausa de 5 min",
+        "💎 Estilo Premium Aviator:\n• Bet fixa e pequena\n• Saída disciplinada antes de 2x\n• Máximo 5 rodadas por sessão\n• Se perder 3 seguidas, encerre a sessão",
+    ],
     "mines": [
         "💎 Estilo Premium Mines:\n• Configurar 5 minas\n• Abrir no máximo 4 campos\n• Sair na 3ª ou 4ª abertura\n• Pare ao perder 3 rodadas seguidas",
         "💎 Estilo Premium Mines:\n• Gestão leve no início\n• Não forçar quinta abertura\n• Sessão curta\n• Controle total da banca",
@@ -476,6 +491,38 @@ STRATEGY_VARIANTS = {
     "dice": [
         "💎 Estilo Premium Dice:\n• Entrada pequena e fixa\n• Não aumentar agressivamente após perda\n• Trabalhar sessões curtas\n• Meta curta e pausa",
         "💎 Estilo Premium Dice:\n• Buscar constância, não emoção\n• Stop loss curto\n• Stop win rápido\n• Evite maratonar",
+    ],
+    "hilo": [
+        "💎 Estilo Premium HiLo:\n• Bet fixa e pequena por rodada\n• Máximo 8 rodadas por sessão\n• Não dobre após perda\n• Stop loss: 5 erros seguidos = encerra",
+        "💎 Estilo Premium HiLo:\n• Escolha sempre a mesma direção por sessão\n• Gestão rigorosa da banca\n• Sessão curta com meta definida\n• Pare ao atingir o stop win",
+    ],
+    "limbo": [
+        "💎 Estilo Premium Limbo:\n• Entre com aposta fixa e pequena\n• Defina o multiplicador alvo antes de jogar\n• Não altere o alvo no meio da sessão\n• Stop loss: 15% da banca",
+        "💎 Estilo Premium Limbo:\n• Multiplicador alvo entre 1.5x e 3x\n• Bet fixa sem progressão\n• Máximo 10 rodadas por sessão\n• Encerre ao atingir o objetivo",
+    ],
+    "plinko": [
+        "💎 Estilo Premium Plinko:\n• Use risco baixo ou médio\n• Bet fixa por lançamento\n• Máximo 15 lançamentos por sessão\n• Não aumente a bet após sequência negativa",
+        "💎 Estilo Premium Plinko:\n• Prefira as colunas centrais\n• Sessão curta com stop definido\n• Bet constante sem variação\n• Stop loss: 20% da banca",
+    ],
+    "scratch": [
+        "💎 Estilo Premium Football Scratch:\n• Jogue em bet baixa e fixa\n• Máximo 5 raspadinhas por sessão\n• Não aumente a bet após perda\n• Se ganhar, pare — não reinvista tudo",
+        "💎 Estilo Premium Football Scratch:\n• Sessão curta e controlada\n• Bet mínima para mais volume de jogadas\n• Stop win: dobrou a banca = encerra\n• Stop loss: 5 tentativas sem retorno",
+    ],
+    "coin_flip": [
+        "💎 Estilo Premium Heads Tails:\n• Escolha sempre o mesmo lado por sessão\n• Bet fixa sem dobrar após perda\n• Máximo 8 rodadas por sessão\n• Stop loss: 5 derrotas seguidas = encerra",
+        "💎 Estilo Premium Heads Tails:\n• Não troque de lado no meio da sessão\n• Gestão fixa sem martingale\n• Sessão disciplinada e curta\n• Lucro pequeno e consistente",
+    ],
+    "wheel": [
+        "💎 Estilo Premium Lucky Wheel:\n• Aposte nos campos de menor multiplicador\n• Bet fixa e pequena\n• Máximo 10 giros por sessão\n• Não persiga o multiplicador máximo",
+        "💎 Estilo Premium Lucky Wheel:\n• Foque nos campos com maior frequência\n• Bet constante sem variação\n• Sessão curta com meta definida\n• Stop loss: 30% da banca",
+    ],
+    "penalty": [
+        "💎 Estilo Premium Penalty Shootout:\n• Escolha sempre o mesmo canto por sessão\n• Bet fixa sem progressão\n• Máximo 8 cobranças por sessão\n• Stop loss: 4 erros seguidos = pausa",
+        "💎 Estilo Premium Penalty Shootout:\n• Não mude o canto no meio da sessão\n• Gestão disciplinada da banca\n• Sessão curta e objetiva\n• Encerre ao atingir a meta",
+    ],
+    "tower": [
+        "💎 Estilo Premium Tower:\n• Suba no máximo 4 andares por rodada\n• Retire antes do 5º andar\n• Bet fixa e pequena\n• Pare ao perder 3 rodadas seguidas",
+        "💎 Estilo Premium Tower:\n• Não force andares altos\n• Saída disciplinada no 3º ou 4º andar\n• Sessão curta com stop definido\n• Stop loss: 20% da banca",
     ],
 }
 
@@ -674,7 +721,25 @@ def infer_game_type(provider: str, name: str):
 
     if "mines" in n:
         return "mines"
-    if "dice" in n or "limbo" in n or "keno" in n or "plinko" in n or "hilo" in n or "goal" in n or "balloon" in n or "aviator" in n or "crash" in n:
+    if "aviator" in n:
+        return "aviator"
+    if "hilo" in n or "hi lo" in n:
+        return "hilo"
+    if "limbo" in n:
+        return "limbo"
+    if "plinko" in n:
+        return "plinko"
+    if "scratch" in n:
+        return "scratch"
+    if "heads tails" in n or "heads & tails" in n:
+        return "coin_flip"
+    if "lucky wheel" in n or "wheel" in n:
+        return "wheel"
+    if "penalty" in n:
+        return "penalty"
+    if "tower" in n:
+        return "tower"
+    if "dice" in n or "keno" in n or "goal" in n or "balloon" in n or "crash" in n or "rocket" in n:
         return "crash"
     if p in {x.lower() for x in CRASH_PROVIDERS}:
         return "crash"
@@ -744,10 +809,22 @@ def choose_variant(items, plan_date: str, game_id: int, salt: str):
 
 
 def choose_strategy_key(game_type: str, position: int):
-    if game_type == "mines":
-        return "mines"
-    if game_type == "crash":
-        return "crash"
+    mapping = {
+        "mines":     "mines",
+        "crash":     "crash",
+        "aviator":   "aviator",
+        "hilo":      "hilo",
+        "limbo":     "limbo",
+        "plinko":    "plinko",
+        "scratch":   "scratch",
+        "coin_flip": "coin_flip",
+        "wheel":     "wheel",
+        "penalty":   "penalty",
+        "tower":     "tower",
+        "dice":      "dice",
+    }
+    if game_type in mapping:
+        return mapping[game_type]
     modes = ["slots_leve", "slots_media", "slots_agressiva"]
     return modes[position % len(modes)]
 
