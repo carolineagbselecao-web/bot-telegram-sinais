@@ -382,13 +382,15 @@ PROVIDER_GAMES = {
     ],
     "Spribe": [
         ("Aviator", "", "✈️"),
-        ("Mines", "", "💣"),
-        ("Plinko", "", "🔴"),
         ("Dice", "", "🎲"),
-        ("HiLo", "", "🃏"),
         ("Goal", "", "⚽"),
-        ("Balloon", "", "🎈"),
+        ("Hi Lo", "", "🃏"),
+        ("Hotline", "", "📞"),
         ("Keno", "", "🔢"),
+        ("Keno 80", "", "🔢"),
+        ("Mines", "", "💣"),
+        ("Mini Roulette", "", "🎡"),
+        ("Plinko", "", "🔴"),
     ],
     "Microgaming": [
         ("Immortal Romance", "", "🧛"),
@@ -535,16 +537,64 @@ PROVIDER_GAMES = {
         ("Fortune Goat", "", "🐐"),
     ],
     "Rectangle Games": [
-        ("Rectangle Fortune", "", "🍀"),
-        ("Rectangle Wilds", "", "🃏"),
-        ("Rectangle Dragon", "", "🐉"),
-        ("Rectangle Tiger", "", "🐯"),
-        ("Rectangle Queen", "", "👑"),
-        ("Rectangle Riches", "", "💰"),
-        ("Rectangle Bonanza", "", "🎰"),
-        ("Rectangle 7s", "", "7️⃣"),
-        ("Rectangle Pirate", "", "🏴‍☠️"),
-        ("Rectangle Aztec", "", "🏺"),
+        ("Afun Firecrackers Fortune", "", "🐉"),
+        ("Aquarius Fortune Wheel", "", "🎡"),
+        ("Aztec's Mystery", "", "🏺"),
+        ("Battle Ship", "", "⚓"),
+        ("Black Assassin", "", "🗡️"),
+        ("Capricorn's Orb of Fortune", "", "🔮"),
+        ("Chicken Uncrossable", "", "🐔"),
+        ("Disco Fever", "", "🪩"),
+        ("Dragon Crash", "", "🐉"),
+        ("Eggy Pop", "", "🥚"),
+        ("Farmageddon", "", "🐄"),
+        ("Fiesta Blue", "", "🎭"),
+        ("Fiesta Green", "", "🎭"),
+        ("Fiesta Magenta", "", "🎭"),
+        ("Fiesta Red", "", "🎭"),
+        ("Firecrackers Fortune", "", "🧨"),
+        ("Firecrackers Fortune 100", "", "🧨"),
+        ("Fortune Pig", "", "🐷"),
+        ("Gold Diggers", "", "⛏️"),
+        ("Golden Koi Trail", "", "🐟"),
+        ("The Inmate Outcuss", "", "🔫"),
+        ("Iron Valor", "", "⚔️"),
+        ("Lucky Caramelo", "", "🍬"),
+        ("Lucky Caramelo 1000", "", "🍬"),
+        ("Lucky Duck", "", "🦆"),
+        ("Lucky Fox", "", "🦊"),
+        ("Lucky Panda", "", "🐼"),
+        ("Lucky Snake", "", "🐍"),
+        ("Lucky Turtle", "", "🐢"),
+        ("Magic Circus", "", "🎪"),
+        ("Money Mania", "", "💵"),
+        ("Piggy Mines", "", "🐷"),
+        ("Pirate's Treasure Reel", "", "🏴‍☠️"),
+        ("Pisces Realm of Fortune", "", "🐟"),
+        ("Prosperity Clash", "", "💰"),
+        ("Prosperity Dragon", "", "🐉"),
+        ("Prosperity Dragon Golden Reel", "", "🐉"),
+        ("Prosperity Horse", "", "🐎"),
+        ("Prosperity Mouse", "", "🐭"),
+        ("Prosperity Ox", "", "🐂"),
+        ("Prosperity Rabbit", "", "🐰"),
+        ("Prosperity Tiger", "", "🐯"),
+        ("Realm of Thunder", "", "⚡"),
+        ("Rudolf's Gifts", "", "🦌"),
+        ("Semana Santa Treasures", "", "✝️"),
+        ("Shapes of Fortune", "", "🔷"),
+        ("Shapes of Fortune Xmas", "", "🎄"),
+        ("Smash Fury", "", "💥"),
+        ("Solar Pong", "", "🌞"),
+        ("Swaggy Caramelo", "", "🍬"),
+        ("Swaggy Prize", "", "🏆"),
+        ("The Lone Fireball", "", "🔥"),
+        ("The Lucky Year", "", "🎆"),
+        ("Tinkering Box", "", "🔧"),
+        ("Topfly Pirate's Treasure Reel", "", "🏴‍☠️"),
+        ("Treasures of Hades", "", "💀"),
+        ("Wheel of Wealth", "", "🎡"),
+        ("Year of the Golden Horse", "", "🐎"),
     ],
     "Fat Panda": [
         ("Panda Panda", "", "🐼"),
@@ -663,6 +713,18 @@ STRATEGY_VARIANTS = {
     "grid_slot": [
         "💎 Estilo Premium Grid Slot:\n• Jogue em bet baixa — a volatilidade é alta\n• Aguarde as cascatas acontecerem naturalmente\n• Não aumente a bet em sequência negativa\n• Stop loss: 20% da banca por sessão\n• Quando encaixar uma sequência, retire o lucro",
         "💎 Estilo Premium Grid Slot:\n• Alta volatilidade — prepare a banca para sequências secas\n• Bet fixa e disciplinada durante toda a sessão\n• O potencial de multiplicador é alto — não force\n• Sessão curta com meta definida\n• Stop win: dobrou = encerra",
+    ],
+    "keno": [
+        "💎 Estilo Premium Keno:\n• Escolha entre 4 e 6 números por rodada\n• Mantenha os mesmos números por toda a sessão\n• Bet fixa sem progressão após perda\n• Máximo 10 rodadas por sessão\n• Stop loss: 20% da banca",
+        "💎 Estilo Premium Keno:\n• Não troque os números no meio da sessão\n• Gestão disciplinada e bet constante\n• Sessão curta com meta definida\n• Stop win: triplicou = encerra",
+    ],
+    "roulette": [
+        "💎 Estilo Premium Mini Roulette:\n• Aposte nas cores (vermelho ou preto) com bet fixa\n• Não use progressão após perda\n• Máximo 10 rodadas por sessão\n• Stop loss: 25% da banca\n• Escolha um lado e mantenha por toda a sessão",
+        "💎 Estilo Premium Mini Roulette:\n• Foque nas apostas de maior frequência\n• Bet pequena e constante\n• Sessão curta e disciplinada\n• Stop win: dobrou = encerra\n• Evite apostar em números únicos",
+    ],
+    "runner": [
+        "💎 Estilo Premium Chicken Uncrossable:\n• Comece com bet baixa até pegar o ritmo\n• Foque em desviar dos obstáculos sem pressa\n• Não aumente a bet em sequência negativa\n• Máximo 10 partidas por sessão\n• Stop loss: 20% da banca",
+        "💎 Estilo Premium Chicken Uncrossable:\n• Bet fixa e pequena por partida\n• Concentração total — não jogue apressado\n• Sessão curta com meta definida\n• Stop win: dobrou = encerra\n• Pare ao perder 4 seguidas",
     ],
 }
 
@@ -882,6 +944,16 @@ def infer_game_type(provider: str, name: str):
     # grid slots Hacksaw (cluster pay / cascata)
     if n in {"blocks", "colors", "cubes", "cubes 2", "lines"}:
         return "grid_slot"
+    if "roulette" in n:
+        return "roulette"
+    if "keno" in n:
+        return "keno"
+    if "chicken uncrossable" in n:
+        return "runner"
+    if "piggy mines" in n:
+        return "mines"
+    if "aquarius fortune wheel" in n or "wheel of wealth" in n:
+        return "wheel"
     # crash / rocket
     if "rocket reels" in n:
         return "crash"
@@ -971,6 +1043,9 @@ def choose_strategy_key(game_type: str, position: int):
         "tower":     "tower",
         "dice":      "dice",
         "grid_slot": "grid_slot",
+        "keno":      "keno",
+        "roulette":  "roulette",
+        "runner":    "runner",
     }
     if game_type in mapping:
         return mapping[game_type]
