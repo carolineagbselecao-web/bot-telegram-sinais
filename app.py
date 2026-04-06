@@ -1,5 +1,6 @@
 from flask import Flask, request, redirect, url_for, session, render_template_string, flash
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import threading
 import time
 import random
@@ -17,7 +18,7 @@ from functools import wraps
 # CONFIG
 # =========================================================
 APP_TZ = ZoneInfo("America/Sao_Paulo")
-DB_PATH = os.getenv("DB_PATH", "/tmp/rainha_games_auto.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 TOKEN = os.getenv("TOKEN", "").strip()
 CHAT_ID = os.getenv("CHAT_ID", "").strip()
@@ -484,10 +485,8 @@ CRASH_PROVIDERS = {"Spribe", "Original", "Betby", "Easybet", "1Bet", "Pateplay"}
 # DB
 # =========================================================
 def db():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    # WAL mode: permite leituras concorrentes sem bloquear escritas
-    conn.execute("PRAGMA journal_mode=WAL")
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+    conn.autocommit = False
     return conn
 
 
@@ -513,24 +512,29 @@ def parse_hhmm(hhmm: str):
 
 
 def seed_setting(cur, key, value):
-    cur.execute("SELECT id FROM settings WHERE key = ?", (key,))
+    cur.execute("SELECT id FROM settings WHERE key = %s", (key,))
     if not cur.fetchone():
-        cur.execute("INSERT INTO settings (key, value) VALUES (?, ?)", (key, value))
+        cur.execute("INSERT INTO settings (key, value) VALUES (%s, %s)", (key, value))
 
 
 def set_setting(key, value):
     conn = db()
-    conn.execute("""
-        INSERT INTO settings (key, value) VALUES (?, ?)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO settings (key, value) VALUES (%s, %s)
+        ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value
     """, (key, value))
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def get_setting(key, default=""):
     conn = db()
-    row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    cur = conn.cursor()
+    cur.execute("SELECT value FROM settings WHERE key = %s", (key,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return row["value"] if row else default
 
@@ -541,7 +545,7 @@ def init_db():
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'client',
@@ -554,7 +558,7 @@ def init_db():
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS settings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             key TEXT UNIQUE NOT NULL,
             value TEXT NOT NULL
         )
@@ -562,7 +566,7 @@ def init_db():
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS plans (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             name TEXT UNIQUE NOT NULL,
             price TEXT NOT NULL,
             features TEXT NOT NULL,
@@ -572,7 +576,7 @@ def init_db():
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS games (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             provider TEXT NOT NULL,
             rtp TEXT DEFAULT '',
@@ -585,7 +589,7 @@ def init_db():
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS daily_plan (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             plan_date TEXT NOT NULL,
             position INTEGER NOT NULL,
             game_id INTEGER NOT NULL,
@@ -599,15 +603,9 @@ def init_db():
         )
     """)
 
-    # Adiciona coluna locked_at se já existir a tabela sem ela (migração segura)
-    try:
-        cur.execute("ALTER TABLE daily_plan ADD COLUMN locked_at TEXT DEFAULT ''")
-    except Exception:
-        pass
-
     cur.execute("""
         CREATE TABLE IF NOT EXISTS sent_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             send_date TEXT NOT NULL,
             send_time TEXT NOT NULL,
             game_id INTEGER,
@@ -633,11 +631,11 @@ def init_db():
     seed_setting(cur, "scheduler_owner", "")
     seed_setting(cur, "scheduler_lease_until", "")
 
-    cur.execute("SELECT id FROM users WHERE username = ?", (DEFAULT_ADMIN_USER,))
+    cur.execute("SELECT id FROM users WHERE username = %s", (DEFAULT_ADMIN_USER,))
     if not cur.fetchone():
         cur.execute("""
             INSERT INTO users (username, password, role, plan, brand_name, created_at)
-            VALUES (?, ?, 'admin', 'Premium', 'Rainha Games', ?)
+            VALUES (%s, %s, 'admin', 'Premium', 'Rainha Games', %s)
         """, (DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASSWORD, now_br_str()))
 
     plans = [
@@ -658,11 +656,11 @@ def init_db():
         ),
     ]
     for name, price, features in plans:
-        cur.execute("SELECT id FROM plans WHERE name = ?", (name,))
+        cur.execute("SELECT id FROM plans WHERE name = %s", (name,))
         if not cur.fetchone():
             cur.execute("""
                 INSERT INTO plans (name, price, features, active)
-                VALUES (?, ?, ?, 1)
+                VALUES (%s, %s, %s, 1)
             """, (name, price, features))
 
     conn.commit()
@@ -685,9 +683,11 @@ def infer_game_type(provider: str, name: str):
 
 def add_game_if_missing(name: str, provider: str, rtp: str = "", emoji: str = "🎰"):
     conn = db()
-    conn.execute("""
-        INSERT OR IGNORE INTO games (name, provider, rtp, emoji, game_type, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO games (name, provider, rtp, emoji, game_type, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT(name, provider) DO NOTHING
     """, (
         name.strip(),
         provider.strip(),
@@ -697,6 +697,7 @@ def add_game_if_missing(name: str, provider: str, rtp: str = "", emoji: str = "�
         now_br_str()
     ))
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -784,10 +785,12 @@ def acquire_scheduler_leadership() -> bool:
     now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
 
     conn = db()
+    cur = conn.cursor()
     try:
-        conn.execute("BEGIN IMMEDIATE")
-        owner_row = conn.execute("SELECT value FROM settings WHERE key = 'scheduler_owner'").fetchone()
-        lease_row = conn.execute("SELECT value FROM settings WHERE key = 'scheduler_lease_until'").fetchone()
+        cur.execute("SELECT value FROM settings WHERE key = 'scheduler_owner'")
+        owner_row = cur.fetchone()
+        cur.execute("SELECT value FROM settings WHERE key = 'scheduler_lease_until'")
+        lease_row = cur.fetchone()
 
         current_owner = owner_row["value"] if owner_row else ""
         current_lease = lease_row["value"] if lease_row else ""
@@ -800,21 +803,28 @@ def acquire_scheduler_leadership() -> bool:
         )
 
         if can_take:
-            conn.execute("UPDATE settings SET value = ? WHERE key = 'scheduler_owner'", (SCHEDULER_INSTANCE_ID,))
-            conn.execute("UPDATE settings SET value = ? WHERE key = 'scheduler_lease_until'", (lease_until,))
+            cur.execute("UPDATE settings SET value = %s WHERE key = 'scheduler_owner'", (SCHEDULER_INSTANCE_ID,))
+            cur.execute("UPDATE settings SET value = %s WHERE key = 'scheduler_lease_until'", (lease_until,))
             conn.commit()
+            cur.close()
+            conn.close()
             return True
 
         conn.rollback()
+        cur.close()
+        conn.close()
         return False
     except Exception:
         try:
             conn.rollback()
         except Exception:
             pass
+        try:
+            cur.close()
+            conn.close()
+        except Exception:
+            pass
         return False
-    finally:
-        conn.close()
 
 
 # =========================================================
@@ -870,29 +880,27 @@ def build_send_slots_for_day(day_str: str):
 
 def ensure_daily_plan(day_str: str):
     conn = db()
+    cur = conn.cursor()
 
-    existing = conn.execute("""
-        SELECT COUNT(*) AS total
-        FROM daily_plan
-        WHERE plan_date = ?
-    """, (day_str,)).fetchone()["total"]
+    cur.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = %s", (day_str,))
+    existing = cur.fetchone()["total"]
 
     if existing > 0:
+        cur.close()
         conn.close()
         return
 
-    games = conn.execute("""
-        SELECT *
-        FROM games
-        ORDER BY provider, name
-    """).fetchall()
+    cur.execute("SELECT * FROM games ORDER BY provider, name")
+    games = cur.fetchall()
 
     if not games:
+        cur.close()
         conn.close()
         return
 
     slots = build_send_slots_for_day(day_str)
     if not slots:
+        cur.close()
         conn.close()
         return
 
@@ -911,13 +919,15 @@ def ensure_daily_plan(day_str: str):
 
     for position, game_row in enumerate(selected_games, start=1):
         send_at = slots[position - 1].strftime("%Y-%m-%d %H:%M:%S")
-        conn.execute("""
-            INSERT OR IGNORE INTO daily_plan
+        cur.execute("""
+            INSERT INTO daily_plan
             (plan_date, position, game_id, send_at, sent, sent_at, telegram_status, telegram_response, locked_at)
-            VALUES (?, ?, ?, ?, 0, '', '', '', '')
+            VALUES (%s, %s, %s, %s, 0, '', '', '', '')
+            ON CONFLICT(plan_date, position) DO NOTHING
         """, (day_str, position, game_row["id"], send_at))
 
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -931,24 +941,27 @@ def get_due_unsent_items(limit=1):
     lock_cutoff = (now_dt - timedelta(seconds=LOCK_TIMEOUT_SECONDS)).strftime("%Y-%m-%d %H:%M:%S")
 
     conn = db()
-    rows = conn.execute("""
+    cur = conn.cursor()
+    cur.execute("""
         SELECT dp.*, g.name AS game_name, g.provider, g.rtp, g.emoji, g.game_type
         FROM daily_plan dp
         JOIN games g ON g.id = dp.game_id
-        WHERE dp.plan_date = ?
+        WHERE dp.plan_date = %s
           AND dp.sent = 0
-          AND dp.send_at <= ?
-          AND dp.send_at >= ?
-          AND (dp.locked_at = '' OR dp.locked_at <= ?)
+          AND dp.send_at <= %s
+          AND dp.send_at >= %s
+          AND (dp.locked_at = '' OR dp.locked_at <= %s)
         ORDER BY dp.position ASC
-        LIMIT ?
+        LIMIT %s
     """, (
         day_str,
         now_dt.strftime("%Y-%m-%d %H:%M:%S"),
         cutoff_dt.strftime("%Y-%m-%d %H:%M:%S"),
         lock_cutoff,
         limit
-    )).fetchall()
+    ))
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
     return rows
 
@@ -964,33 +977,42 @@ def try_lock_item(item_id: int) -> bool:
     now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
 
     conn = db()
+    cur = conn.cursor()
     try:
-        result = conn.execute("""
+        cur.execute("""
             UPDATE daily_plan
-            SET locked_at = ?
-            WHERE id = ?
+            SET locked_at = %s
+            WHERE id = %s
               AND sent = 0
-              AND (locked_at = '' OR locked_at <= ?)
+              AND (locked_at = '' OR locked_at <= %s)
         """, (now_str, item_id, lock_cutoff))
         conn.commit()
-        return result.rowcount == 1
-    except Exception:
-        return False
-    finally:
+        rowcount = cur.rowcount
+        cur.close()
         conn.close()
+        return rowcount == 1
+    except Exception:
+        try:
+            conn.rollback()
+            cur.close()
+            conn.close()
+        except Exception:
+            pass
+        return False
 
 
 def finalize_send_log(plan_row, ok, response):
     sent_now = now_br_str()
     conn = db()
-    conn.execute("""
+    cur = conn.cursor()
+    cur.execute("""
         UPDATE daily_plan
-        SET sent = ?,
-            sent_at = ?,
-            telegram_status = ?,
-            telegram_response = ?,
+        SET sent = %s,
+            sent_at = %s,
+            telegram_status = %s,
+            telegram_response = %s,
             locked_at = ''
-        WHERE id = ?
+        WHERE id = %s
     """, (
         1 if ok else 0,
         sent_now if ok else '',
@@ -999,10 +1021,10 @@ def finalize_send_log(plan_row, ok, response):
         plan_row["id"]
     ))
 
-    conn.execute("""
+    cur.execute("""
         INSERT INTO sent_log
         (send_date, send_time, game_id, game_name, provider, sent_at, telegram_status, telegram_response)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         today_str(),
         datetime.strptime(plan_row["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M"),
@@ -1015,6 +1037,7 @@ def finalize_send_log(plan_row, ok, response):
     ))
 
     conn.commit()
+    cur.close()
     conn.close()
 
 # =========================================================
@@ -1383,11 +1406,14 @@ def login():
         password = request.form.get("password", "").strip()
 
         conn = db()
-        user = conn.execute("""
+        cur = conn.cursor()
+        cur.execute("""
             SELECT * FROM users
-            WHERE username = ? AND password = ? AND is_active = 1
+            WHERE username = %s AND password = %s AND is_active = 1
             LIMIT 1
-        """, (username, password)).fetchone()
+        """, (username, password))
+        user = cur.fetchone()
+        cur.close()
         conn.close()
 
         if user:
@@ -1432,26 +1458,33 @@ def dashboard():
     ensure_daily_plan(today_str())
 
     conn = db()
-    total_games = conn.execute("SELECT COUNT(*) AS total FROM games").fetchone()["total"]
-    total_providers = conn.execute("SELECT COUNT(DISTINCT provider) AS total FROM games").fetchone()["total"]
-    sent_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND telegram_status = 'ok'", (today_str(),)).fetchone()["total"]
-    pending_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND sent = 0", (today_str(),)).fetchone()["total"]
-    first_time = conn.execute("SELECT send_at FROM daily_plan WHERE plan_date = ? ORDER BY position ASC LIMIT 1", (today_str(),)).fetchone()
-    last_time = conn.execute("SELECT send_at FROM daily_plan WHERE plan_date = ? ORDER BY position DESC LIMIT 1", (today_str(),)).fetchone()
-    last_log = conn.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 1").fetchone()
-    next_item = conn.execute("""
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS total FROM games")
+    total_games = cur.fetchone()["total"]
+    cur.execute("SELECT COUNT(DISTINCT provider) AS total FROM games")
+    total_providers = cur.fetchone()["total"]
+    cur.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = %s AND telegram_status = 'ok'", (today_str(),))
+    sent_today = cur.fetchone()["total"]
+    cur.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = %s AND sent = 0", (today_str(),))
+    pending_today = cur.fetchone()["total"]
+    cur.execute("SELECT send_at FROM daily_plan WHERE plan_date = %s ORDER BY position ASC LIMIT 1", (today_str(),))
+    first_time = cur.fetchone()
+    cur.execute("SELECT send_at FROM daily_plan WHERE plan_date = %s ORDER BY position DESC LIMIT 1", (today_str(),))
+    last_time = cur.fetchone()
+    cur.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 1")
+    last_log = cur.fetchone()
+    cur.execute("""
         SELECT dp.*, g.name AS game_name, g.provider, g.rtp, g.emoji, g.game_type
         FROM daily_plan dp
         JOIN games g ON g.id = dp.game_id
-        WHERE dp.plan_date = ? AND dp.sent = 0
+        WHERE dp.plan_date = %s AND dp.sent = 0
         ORDER BY dp.position ASC
         LIMIT 1
-    """, (today_str(),)).fetchone()
-    recent_logs = conn.execute("""
-        SELECT * FROM sent_log
-        ORDER BY id DESC
-        LIMIT 12
-    """).fetchall()
+    """, (today_str(),))
+    next_item = cur.fetchone()
+    cur.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 12")
+    recent_logs = cur.fetchall()
+    cur.close()
     conn.close()
 
     preview = "Nenhuma prévia disponível."
@@ -1585,7 +1618,10 @@ def dashboard():
 @require_admin
 def sales_plans():
     conn = db()
-    rows = conn.execute("SELECT * FROM plans WHERE active = 1 ORDER BY id ASC").fetchall()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM plans WHERE active = 1 ORDER BY id ASC")
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
 
     cards = ""
@@ -1613,8 +1649,6 @@ def sales_plans():
 @app.route("/admin/users", methods=["GET", "POST"])
 @require_admin
 def admin_users():
-    conn = db()
-
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
@@ -1623,22 +1657,29 @@ def admin_users():
         brand_name = request.form.get("brand_name", "Rainha Games").strip()
 
         if username and password:
+            conn = db()
+            cur = conn.cursor()
             try:
-                conn.execute("""
+                cur.execute("""
                     INSERT INTO users (username, password, role, plan, brand_name, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                 """, (username, password, role, plan, brand_name, now_br_str()))
                 conn.commit()
                 flash("Usuário criado com sucesso.")
             except Exception as e:
+                conn.rollback()
                 flash(f"Erro ao criar usuário: {e}")
+            finally:
+                cur.close()
+                conn.close()
 
         return redirect(url_for("admin_users"))
 
-    users = conn.execute("""
-        SELECT * FROM users
-        ORDER BY id DESC
-    """).fetchall()
+    conn = db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users ORDER BY id DESC")
+    users = cur.fetchall()
+    cur.close()
     conn.close()
 
     rows = ""
@@ -1747,19 +1788,17 @@ def admin_catalog():
             return redirect(url_for("admin_catalog"))
 
     conn = db()
-    provider_rows = conn.execute("""
+    cur = conn.cursor()
+    cur.execute("""
         SELECT provider, COUNT(*) AS total
         FROM games
         GROUP BY provider
         ORDER BY total DESC, provider ASC
-    """).fetchall()
-
-    recent_games = conn.execute("""
-        SELECT *
-        FROM games
-        ORDER BY id DESC
-        LIMIT 40
-    """).fetchall()
+    """)
+    provider_rows = cur.fetchall()
+    cur.execute("SELECT * FROM games ORDER BY id DESC LIMIT 40")
+    recent_games = cur.fetchall()
+    cur.close()
     conn.close()
 
     provider_table = ""
@@ -1936,14 +1975,17 @@ def admin_test_send():
     ensure_daily_plan(today_str())
 
     conn = db()
-    next_item = conn.execute("""
+    cur = conn.cursor()
+    cur.execute("""
         SELECT dp.*, g.name AS game_name, g.provider, g.rtp, g.emoji, g.game_type
         FROM daily_plan dp
         JOIN games g ON g.id = dp.game_id
-        WHERE dp.plan_date = ? AND dp.sent = 0
+        WHERE dp.plan_date = %s AND dp.sent = 0
         ORDER BY dp.position ASC
         LIMIT 1
-    """, (today_str(),)).fetchone()
+    """, (today_str(),))
+    next_item = cur.fetchone()
+    cur.close()
     conn.close()
 
     if not next_item:
@@ -1974,8 +2016,10 @@ def admin_test_send():
 @require_admin
 def admin_rebuild_plan():
     conn = db()
-    conn.execute("DELETE FROM daily_plan WHERE plan_date = ? AND sent = 0", (today_str(),))
+    cur = conn.cursor()
+    cur.execute("DELETE FROM daily_plan WHERE plan_date = %s AND sent = 0", (today_str(),))
     conn.commit()
+    cur.close()
     conn.close()
 
     ensure_daily_plan(today_str())
@@ -1992,22 +2036,33 @@ def api_dashboard_stats():
     ensure_daily_plan(today_str())
 
     conn = db()
-    total_games = conn.execute("SELECT COUNT(*) AS total FROM games").fetchone()["total"]
-    total_providers = conn.execute("SELECT COUNT(DISTINCT provider) AS total FROM games").fetchone()["total"]
-    sent_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND telegram_status = 'ok'", (today_str(),)).fetchone()["total"]
-    pending_today = conn.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = ? AND sent = 0", (today_str(),)).fetchone()["total"]
-    first_time = conn.execute("SELECT send_at FROM daily_plan WHERE plan_date = ? ORDER BY position ASC LIMIT 1", (today_str(),)).fetchone()
-    last_time = conn.execute("SELECT send_at FROM daily_plan WHERE plan_date = ? ORDER BY position DESC LIMIT 1", (today_str(),)).fetchone()
-    last_log = conn.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 1").fetchone()
-    next_item = conn.execute("""
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS total FROM games")
+    total_games = cur.fetchone()["total"]
+    cur.execute("SELECT COUNT(DISTINCT provider) AS total FROM games")
+    total_providers = cur.fetchone()["total"]
+    cur.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = %s AND telegram_status = 'ok'", (today_str(),))
+    sent_today = cur.fetchone()["total"]
+    cur.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = %s AND sent = 0", (today_str(),))
+    pending_today = cur.fetchone()["total"]
+    cur.execute("SELECT send_at FROM daily_plan WHERE plan_date = %s ORDER BY position ASC LIMIT 1", (today_str(),))
+    first_time = cur.fetchone()
+    cur.execute("SELECT send_at FROM daily_plan WHERE plan_date = %s ORDER BY position DESC LIMIT 1", (today_str(),))
+    last_time = cur.fetchone()
+    cur.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 1")
+    last_log = cur.fetchone()
+    cur.execute("""
         SELECT dp.*, g.name AS game_name, g.provider, g.rtp, g.emoji, g.game_type
         FROM daily_plan dp
         JOIN games g ON g.id = dp.game_id
-        WHERE dp.plan_date = ? AND dp.sent = 0
+        WHERE dp.plan_date = %s AND dp.sent = 0
         ORDER BY dp.position ASC
         LIMIT 1
-    """, (today_str(),)).fetchone()
-    recent_logs = conn.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 12").fetchall()
+    """, (today_str(),))
+    next_item = cur.fetchone()
+    cur.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 12")
+    recent_logs = cur.fetchall()
+    cur.close()
     conn.close()
 
     preview = "Nenhuma prévia disponível."
@@ -2057,30 +2112,15 @@ def api_dashboard_stats():
 # =========================================================
 # START
 # =========================================================
+_scheduler_started = False
+
+
 def start_scheduler():
-    """
-    Usa lock de arquivo do sistema operacional para garantir que
-    APENAS UM processo/thread rode o scheduler por vez.
-    Funciona mesmo com gunicorn multi-worker, Flask debug reload, etc.
-    """
-    import fcntl
-
-    LOCK_FILE = "/tmp/rainha_scheduler.lock"
-
-    def _run():
-        try:
-            lf = open(LOCK_FILE, "w")
-            # Tenta travar exclusivamente — se outro processo já travou, levanta exceção imediatamente
-            fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            lf.write(str(os.getpid()))
-            lf.flush()
-            # Conseguiu o lock — este processo é o único scheduler
-            scheduler_loop()
-        except (IOError, OSError):
-            # Outro processo já tem o lock — este processo NÃO roda scheduler
-            pass
-
-    thread = threading.Thread(target=_run, daemon=True)
+    global _scheduler_started
+    if _scheduler_started:
+        return
+    _scheduler_started = True
+    thread = threading.Thread(target=scheduler_loop, daemon=True)
     thread.start()
 
 
