@@ -2057,15 +2057,30 @@ def api_dashboard_stats():
 # =========================================================
 # START
 # =========================================================
-_scheduler_started = False
-
-
 def start_scheduler():
-    global _scheduler_started
-    if _scheduler_started:
-        return
-    _scheduler_started = True
-    thread = threading.Thread(target=scheduler_loop, daemon=True)
+    """
+    Usa lock de arquivo do sistema operacional para garantir que
+    APENAS UM processo/thread rode o scheduler por vez.
+    Funciona mesmo com gunicorn multi-worker, Flask debug reload, etc.
+    """
+    import fcntl
+
+    LOCK_FILE = "/tmp/rainha_scheduler.lock"
+
+    def _run():
+        try:
+            lf = open(LOCK_FILE, "w")
+            # Tenta travar exclusivamente — se outro processo já travou, levanta exceção imediatamente
+            fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            lf.write(str(os.getpid()))
+            lf.flush()
+            # Conseguiu o lock — este processo é o único scheduler
+            scheduler_loop()
+        except (IOError, OSError):
+            # Outro processo já tem o lock — este processo NÃO roda scheduler
+            pass
+
+    thread = threading.Thread(target=_run, daemon=True)
     thread.start()
 
 
