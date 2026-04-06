@@ -602,9 +602,142 @@ PROVIDER_GAMES = {
         ("Panda Gold", "", "🐼"),
     ],
     "Funky Games": [
-        ("Funky Fruits", "", "🍓"),
-        ("Funky Spins", "", "🎰"),
-        ("Funky Fortune", "", "🍀"),
+        ("5 Dragons Legend", "", "🐉"),
+        ("7 Up 7 Down", "", "🎲"),
+        ("7 Up Down", "", "🎲"),
+        ("777 Blazing", "", "7️⃣"),
+        ("777 Blazing 2", "", "7️⃣"),
+        ("777 Blazing Classic", "", "7️⃣"),
+        ("777 Blazing Hold and Win", "", "7️⃣"),
+        ("Alice", "", "🐇"),
+        ("Aloha Fruit Punch", "", "🍹"),
+        ("Aloha! Fruityways", "", "🌺"),
+        ("Atom", "", "⚛️"),
+        ("Atomwar", "", "⚛️"),
+        ("Aztec Fortune Megaways", "", "🏺"),
+        ("Aztec Plinko", "", "🔴"),
+        ("Baccarat Babes", "", "🃏"),
+        ("Baccarat VVIP", "", "🃏"),
+        ("Basketball Strike", "", "🏀"),
+        ("Bau Cua", "", "🎲"),
+        ("Belangkai", "", "🦀"),
+        ("Big Bang Boxing", "", "🥊"),
+        ("Bonus Bear", "", "🐻"),
+        ("Buffalo Rage", "", "🦬"),
+        ("Buffalo Splash", "", "🦬"),
+        ("Cai Shen 88", "", "💰"),
+        ("Caishen Baoxi", "", "💰"),
+        ("Caishen's Fortune", "", "💰"),
+        ("Calabash Brothers", "", "🎭"),
+        ("Capsa Susun", "", "🃏"),
+        ("Captain Money", "", "🏴‍☠️"),
+        ("Captain's Treasure", "", "🏴‍☠️"),
+        ("Caribbean Saga", "", "🎡"),
+        ("Cash Booster", "", "💵"),
+        ("Cash or Crash", "", "💥"),
+        ("Cash or Crash 2", "", "💥"),
+        ("Chicken Love", "", "🐔"),
+        ("Clover Brew", "", "🍀"),
+        ("Clover Coin Combo", "", "🍀"),
+        ("Colorful Mermaid", "", "🧜"),
+        ("Domino Gaplebet", "", "🀱"),
+        ("Easter Run", "", "🐣"),
+        ("Eros", "", "💘"),
+        ("Euro Cup", "", "⚽"),
+        ("Fafafa", "", "🎰"),
+        ("Fafafa2", "", "🎰"),
+        ("Fan Tan", "", "🎲"),
+        ("Fish Prawn Crab", "", "🦀"),
+        ("Football Champion", "", "⚽"),
+        ("Football Fever", "", "⚽"),
+        ("Football Mines", "", "💣"),
+        ("Football Star", "", "⚽"),
+        ("Football Strike", "", "⚽"),
+        ("Fortune Dragon", "", "🐉"),
+        ("Fortune Goddess", "", "👸"),
+        ("Fortune Tree Wild", "", "🌳"),
+        ("Gems of Zeus", "", "💎"),
+        ("Ghost Pirate", "", "🏴‍☠️"),
+        ("Golden Crab", "", "🦀"),
+        ("Golden Dynasty", "", "👑"),
+        ("Golden Koi Rise", "", "🐟"),
+        ("Golden Mahjong Deluxe", "", "🀄"),
+        ("Happy Hour Fruit Slot", "", "🍓"),
+        ("Happy10", "", "🔢"),
+        ("Haunted Spirit", "", "👻"),
+        ("Hawaii", "", "🌺"),
+        ("Heart of Ocean", "", "🌊"),
+        ("Highway King", "", "🚛"),
+        ("Huga", "", "🦁"),
+        ("Ice Land", "", "❄️"),
+        ("Inferno Sea", "", "🔥"),
+        ("Ji Ji Ji", "", "🎰"),
+        ("Jogo do Bicho", "", "🐾"),
+        ("Kenosoccer", "", "🔢"),
+        ("Kenowar", "", "🔢"),
+        ("Landing Chicken", "", "🐔"),
+        ("Legend of Egypt", "", "🏺"),
+        ("Limbo Football", "", "🎯"),
+        ("Lubu", "", "⚔️"),
+        ("Lucky Lanterns", "", "🏮"),
+        ("Lucky Wheel", "", "🎡"),
+        ("Meow HiLo", "", "🃏"),
+        ("Midnight Robbery", "", "💰"),
+        ("Mines", "", "💣"),
+        ("Mines or Crash", "", "💣"),
+        ("Mines or Gift", "", "💣"),
+        ("Mines or Treat", "", "💣"),
+        ("Narcos", "", "🔫"),
+        ("Nezha", "", "🔥"),
+        ("Nuggets", "", "⛏️"),
+        ("Number Game", "", "🔢"),
+        ("Odds Hi Lo", "", "🃏"),
+        ("Outlaw Trails", "", "🤠"),
+        ("Panther Moon", "", "🐆"),
+        ("Peony Beauty", "", "🌸"),
+        ("Pinata", "", "🎉"),
+        ("Plinko Mega Win", "", "🔴"),
+        ("Plinko UFO", "", "🔴"),
+        ("Plinkos", "", "🔴"),
+        ("Pok Deng", "", "🃏"),
+        ("Poker Slam", "", "♠️"),
+        ("Poseidon 777", "", "🔱"),
+        ("Racing King", "", "🏎️"),
+        ("Rage of Olympus", "", "⚡"),
+        ("RNGWar", "", "🎲"),
+        ("Roma", "", "🛡️"),
+        ("Roma Reborn", "", "🛡️"),
+        ("Roulette VVIP", "", "🎡"),
+        ("Royal Ace", "", "🂡"),
+        ("Royal Tiger Baccarat", "", "🐯"),
+        ("Safari Heat", "", "🦁"),
+        ("Sexy Blink", "", "💃"),
+        ("Shuihuheroes", "", "⚔️"),
+        ("Skullbingo", "", "💀"),
+        ("Southern Queen", "", "👑"),
+        ("Sparta", "", "🛡️"),
+        ("Sparta2", "", "🛡️"),
+        ("Speed Blackjack", "", "🃏"),
+        ("Sugar High", "", "🍬"),
+        ("Sweet Bombs", "", "💣"),
+        ("Tai Xiu", "", "🎲"),
+        ("Taj Mahal", "", "🕌"),
+        ("Thai HiLo", "", "🃏"),
+        ("Thai Lotto", "", "🎟️"),
+        ("Thai Paradise", "", "🌴"),
+        ("The Phoenix from the Flames", "", "🔥"),
+        ("Three Brave Piggies", "", "🐷"),
+        ("Thunder Blackjack", "", "🃏"),
+        ("Thunder Dice", "", "🎲"),
+        ("Thunder Feng Shen", "", "⚡"),
+        ("Treasure Dragon", "", "🐉"),
+        ("Virtual Baccarat", "", "🃏"),
+        ("Virtual Dragon Bonus Baccarat", "", "🃏"),
+        ("Virtual Sicbo", "", "🎲"),
+        ("Virtual Tiger Baccarat", "", "🐯"),
+        ("White Lion", "", "🦁"),
+        ("White Tiger", "", "🐯"),
+        ("Zombie Killer", "", "🧟"),
     ],
     "Playtech": [
         ("Buffalo Blitz", "", "🦬"),
@@ -950,10 +1083,30 @@ def infer_game_type(provider: str, name: str):
         return "keno"
     if "chicken uncrossable" in n:
         return "runner"
-    if "piggy mines" in n:
+    # mines
+    if "piggy mines" in n or "football mines" in n or "mines or" in n or n == "mines":
         return "mines"
-    if "aquarius fortune wheel" in n or "wheel of wealth" in n:
+    # wheel / roleta
+    if "aquarius fortune wheel" in n or "wheel of wealth" in n or "lucky wheel" in n or "roulette" in n or "caribbean saga" in n:
         return "wheel"
+    # crash
+    if "cash or crash" in n:
+        return "crash"
+    # hilo
+    if "meow hilo" in n or "odds hi lo" in n or "thai hilo" in n or "7 up" in n:
+        return "hilo"
+    # plinko
+    if "aztec plinko" in n or "plinko mega win" in n or "plinko ufo" in n or "plinkos" in n:
+        return "plinko"
+    # dice / sicbo
+    if "bau cua" in n or "fan tan" in n or "tai xiu" in n or "thunder dice" in n or "virtual sicbo" in n or "rngwar" in n:
+        return "dice"
+    # keno
+    if "kenosoccer" in n or "kenowar" in n or "happy10" in n or "number game" in n or "thai lotto" in n:
+        return "keno"
+    # limbo
+    if "limbo football" in n:
+        return "limbo"
     # crash / rocket
     if "rocket reels" in n:
         return "crash"
