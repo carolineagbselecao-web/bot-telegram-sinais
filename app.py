@@ -12,6 +12,7 @@ import secrets
 import json
 from functools import wraps
 
+
 # =========================================================
 # CONFIG
 # =========================================================
@@ -34,6 +35,10 @@ MAX_LATE_MINUTES = 10
 
 # Tempo máximo de lock em segundos — se travado há mais que isso, considera morto e ignora
 LOCK_TIMEOUT_SECONDS = 60
+
+# Lease do scheduler: apenas UMA instância por vez vira líder e pode enviar sinais
+SCHEDULER_LEASE_SECONDS = 45
+SCHEDULER_INSTANCE_ID = f"{os.getenv('RENDER_INSTANCE_ID') or os.getenv('HOSTNAME') or 'local'}:{os.getpid()}"
 
 DEFAULT_FOOTER_LINK = "https://beacons.ai/rainhagames"
 DEFAULT_FOOTER_TEXT = "👑 A RAINHA JOGA AQUI"
@@ -625,6 +630,8 @@ def init_db():
     seed_setting(cur, "auto_end_time", AUTO_END_TIME)
     seed_setting(cur, "send_interval_minutes", str(SEND_INTERVAL_MINUTES))
     seed_setting(cur, "max_late_minutes", str(MAX_LATE_MINUTES))
+    seed_setting(cur, "scheduler_owner", "")
+    seed_setting(cur, "scheduler_lease_until", "")
 
     cur.execute("SELECT id FROM users WHERE username = ?", (DEFAULT_ADMIN_USER,))
     if not cur.fetchone():
@@ -767,6 +774,49 @@ def build_message_for_game(plan_date: str, position: int, game_row):
         f"{closing}"
     )
 
+def acquire_scheduler_leadership() -> bool:
+    """
+    Garante que apenas uma instância/processo fique responsável pelos envios.
+    Funciona mesmo se houver mais de um worker/import da aplicação.
+    """
+    now_dt = now_br()
+    lease_until = (now_dt + timedelta(seconds=SCHEDULER_LEASE_SECONDS)).strftime("%Y-%m-%d %H:%M:%S")
+    now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        owner_row = conn.execute("SELECT value FROM settings WHERE key = 'scheduler_owner'").fetchone()
+        lease_row = conn.execute("SELECT value FROM settings WHERE key = 'scheduler_lease_until'").fetchone()
+
+        current_owner = owner_row["value"] if owner_row else ""
+        current_lease = lease_row["value"] if lease_row else ""
+
+        can_take = (
+            not current_owner
+            or not current_lease
+            or current_lease <= now_str
+            or current_owner == SCHEDULER_INSTANCE_ID
+        )
+
+        if can_take:
+            conn.execute("UPDATE settings SET value = ? WHERE key = 'scheduler_owner'", (SCHEDULER_INSTANCE_ID,))
+            conn.execute("UPDATE settings SET value = ? WHERE key = 'scheduler_lease_until'", (lease_until,))
+            conn.commit()
+            return True
+
+        conn.rollback()
+        return False
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return False
+    finally:
+        conn.close()
+
+
 # =========================================================
 # PLANEJAMENTO
 # =========================================================
@@ -871,7 +921,7 @@ def ensure_daily_plan(day_str: str):
     conn.close()
 
 
-def get_due_unsent_items(limit=20):
+def get_due_unsent_items(limit=1):
     day_str = today_str()
     ensure_daily_plan(day_str)
 
@@ -906,8 +956,8 @@ def get_due_unsent_items(limit=20):
 def try_lock_item(item_id: int) -> bool:
     """
     Tenta travar o item atomicamente.
-    Retorna True se conseguiu travar (era sent=0 e locked_at vazio ou expirado).
-    Retorna False se outro processo já travou (duplicidade bloqueada).
+    NÃO marca como enviado aqui.
+    Só trava o item para impedir duplicidade até o envio terminar.
     """
     now_dt = now_br()
     lock_cutoff = (now_dt - timedelta(seconds=LOCK_TIMEOUT_SECONDS)).strftime("%Y-%m-%d %H:%M:%S")
@@ -917,7 +967,7 @@ def try_lock_item(item_id: int) -> bool:
     try:
         result = conn.execute("""
             UPDATE daily_plan
-            SET locked_at = ?, sent = 1
+            SET locked_at = ?
             WHERE id = ?
               AND sent = 0
               AND (locked_at = '' OR locked_at <= ?)
@@ -931,15 +981,19 @@ def try_lock_item(item_id: int) -> bool:
 
 
 def finalize_send_log(plan_row, ok, response):
+    sent_now = now_br_str()
     conn = db()
     conn.execute("""
         UPDATE daily_plan
-        SET sent_at = ?,
+        SET sent = ?,
+            sent_at = ?,
             telegram_status = ?,
-            telegram_response = ?
+            telegram_response = ?,
+            locked_at = ''
         WHERE id = ?
     """, (
-        now_br_str(),
+        1 if ok else 0,
+        sent_now if ok else '',
         "ok" if ok else "erro",
         (response or "")[:1000],
         plan_row["id"]
@@ -955,7 +1009,7 @@ def finalize_send_log(plan_row, ok, response):
         plan_row["game_id"],
         plan_row["game_name"],
         plan_row["provider"],
-        now_br_str(),
+        sent_now,
         "ok" if ok else "erro",
         (response or "")[:1000]
     ))
@@ -1013,18 +1067,19 @@ def telegram_send(text, image_url=""):
 def scheduler_loop():
     while True:
         try:
+            # Só a instância líder pode montar agenda e enviar sinais
+            if not acquire_scheduler_leadership():
+                time.sleep(SCHEDULER_SLEEP_SECONDS)
+                continue
+
             ensure_daily_plan(today_str())
             tomorrow = (today_date() + timedelta(days=1)).strftime("%Y-%m-%d")
             ensure_daily_plan(tomorrow)
 
-            due_items = get_due_unsent_items(limit=30)
+            due_items = get_due_unsent_items(limit=1)
             hero_image_url = get_setting("hero_image_url", "").strip()
 
             for item in due_items:
-                # ✅ LOCK ATÔMICO ANTI-DUPLICIDADE
-                # Se dois processos chegarem aqui ao mesmo tempo,
-                # apenas UM consegue gravar o locked_at + sent=1
-                # O outro recebe rowcount=0 e pula
                 locked = try_lock_item(item["id"])
                 if not locked:
                     continue
@@ -2002,7 +2057,14 @@ def api_dashboard_stats():
 # =========================================================
 # START
 # =========================================================
+_scheduler_started = False
+
+
 def start_scheduler():
+    global _scheduler_started
+    if _scheduler_started:
+        return
+    _scheduler_started = True
     thread = threading.Thread(target=scheduler_loop, daemon=True)
     thread.start()
 
