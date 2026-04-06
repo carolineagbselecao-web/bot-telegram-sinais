@@ -1075,13 +1075,21 @@ def get_day_window(day_str: str):
 
 def build_send_slots_for_day(day_str: str):
     start_dt, end_dt = get_day_window(day_str)
-    step = timedelta(minutes=get_interval_minutes())
+    max_interval = get_interval_minutes()  # maximo configurado (padrao 3 min)
+    min_interval = 1                        # minimo sempre 1 min
+
+    # Semente deterministica por dia — mesmos horarios se regenerar no mesmo dia
+    rng_slots = random.Random(stable_seed_for_day(day_str + "_slots"))
+
     slots = []
     current = start_dt
 
     while current <= end_dt:
         slots.append(current)
-        current += step
+        # Intervalo aleatorio entre min e max minutos + segundos aleatorios
+        minutes = rng_slots.randint(min_interval, max_interval)
+        seconds = rng_slots.randint(0, 59)
+        current += timedelta(minutes=minutes, seconds=seconds)
 
     return slots
 
