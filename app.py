@@ -1798,6 +1798,34 @@ def choose_strategy_key(game_type: str, position: int):
     return modes[position % len(modes)]
 
 
+BET_SUGGESTION = {
+    "slots_leve":  "Mínima",
+    "slots_media": "Padrão",
+    "slots_agressiva": "Máxima",
+    "crash":     "Máxima",
+    "aviator":   "Máxima",
+    "mines":     "Máxima",
+    "dice":      "Padrão",
+    "hilo":      "Padrão",
+    "limbo":     "Padrão",
+    "plinko":    "Padrão",
+    "scratch":   "Mínima",
+    "coin_flip": "Mínima",
+    "wheel":     "Mínima",
+    "penalty":   "Mínima",
+    "tower":     "Padrão",
+    "grid_slot": "Mínima",
+    "keno":      "Padrão",
+    "roulette":  "Mínima",
+    "runner":    "Mínima",
+    "baccarat":  "Padrão",
+    "blackjack": "Padrão",
+    "racing":    "Mínima",
+    "bingo":     "Mínima",
+    "darts":     "Mínima",
+}
+
+
 def build_message_for_game(plan_date: str, position: int, game_row):
     intro = choose_variant(INTRO_VARIANTS, plan_date, game_row["id"], "intro")
     closing = choose_variant(CLOSING_VARIANTS, plan_date, game_row["id"], "closing")
@@ -1811,12 +1839,17 @@ def build_message_for_game(plan_date: str, position: int, game_row):
     is_megaways = "megaways" in game_row["name"].lower()
     megaways_line = "⚡ Mecânica: MEGAWAYS — rolos expansíveis, alta volatilidade!\n" if is_megaways else ""
 
+    # Aposta sugerida
+    bet_label = BET_SUGGESTION.get(strategy_key, BET_SUGGESTION.get(game_row["game_type"], "Padrão"))
+    bet_line = f"💰 Aposta sugerida: {bet_label}\n"
+
     return (
         f"{intro}\n\n"
         f"🎮 Jogo: {game_row['name']} {game_row['emoji']}\n"
         f"{provider_line}"
         f"{rtp_line}"
-        f"{megaways_line}\n"
+        f"{megaways_line}"
+        f"{bet_line}\n"
         f"{strategy_text}\n\n"
         f"{closing}"
     )
