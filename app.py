@@ -34,10 +34,7 @@ SEND_INTERVAL_MINUTES = 3
 SCHEDULER_SLEEP_SECONDS = 10
 MAX_LATE_MINUTES = 10
 
-# Tempo máximo de lock em segundos — se travado há mais que isso, considera morto e ignora
 LOCK_TIMEOUT_SECONDS = 60
-
-# Lease do scheduler: apenas UMA instância por vez vira líder e pode enviar sinais
 SCHEDULER_LEASE_SECONDS = 45
 SCHEDULER_INSTANCE_ID = f"{os.getenv('RENDER_INSTANCE_ID') or os.getenv('HOSTNAME') or 'local'}:{os.getpid()}"
 
@@ -142,86 +139,413 @@ PROVIDER_GAMES = {
         ("Doomsday Rampage", "", "💥"),
     ],
     "Pragmatic Play": [
-        ("Gates of Olympus", "96.50%", "⚡"),
-        ("Gates of Olympus 1000", "96.50%", "⚡"),
-        ("Sweet Bonanza", "96.51%", "🍭"),
-        ("Sweet Bonanza Xmas", "96.48%", "🎄"),
-        ("Sweet Bonanza 1000", "96.50%", "🍭"),
-        ("Starlight Princess", "96.50%", "⭐"),
-        ("Starlight Princess 1000", "96.50%", "⭐"),
-        ("Big Bass Bonanza", "96.71%", "🎣"),
-        ("Big Bass Splash", "96.71%", "🎣"),
-        ("Big Bass Bonanza Megaways", "96.70%", "🎣"),
-        ("Big Bass Halloween", "96.50%", "🎃"),
-        ("Big Bass Christmas Bash", "96.50%", "🎄"),
-        ("Big Bass Day at the Races", "", "🏇"),
-        ("Big Bass Amazon Xtreme", "", "🌿"),
-        ("The Dog House", "96.51%", "🐶"),
-        ("The Dog House Megaways", "96.55%", "🐶"),
-        ("Fruit Party", "96.50%", "🍓"),
-        ("Fruit Party 2", "96.50%", "🍓"),
-        ("Fruit Party 1000", "96.50%", "🍓"),
-        ("Sugar Rush", "96.50%", "🍬"),
-        ("Sugar Rush 1000", "96.50%", "🍬"),
-        ("Wolf Gold", "96.01%", "🐺"),
-        ("Wolf Gold Ultimate", "96.50%", "🐺"),
-        ("Buffalo King", "96.06%", "🦬"),
-        ("Buffalo King Megaways", "96.78%", "🦬"),
-        ("Buffalo King Untamed", "96.50%", "🦬"),
-        ("Great Rhino", "95.97%", "🦏"),
-        ("Great Rhino Megaways", "96.58%", "🦏"),
-        ("Extra Juicy", "96.50%", "🍉"),
-        ("Extra Juicy Megaways", "96.52%", "🍉"),
-        ("Juicy Fruits", "96.50%", "🍓"),
-        ("Hot Fiesta", "96.08%", "🌶️"),
-        ("Chili Heat", "96.50%", "🌶️"),
-        ("Release the Kraken", "96.50%", "🐙"),
-        ("Hand of Midas", "96.50%", "✋"),
-        ("Power of Thor", "96.55%", "⚡"),
-        ("Power of Thor Megaways", "96.55%", "⚡"),
+        # Números
+        ("3 Buzzing Wilds", "96.50%", "🐝"),
+        ("3 Dancing Monkeys", "96.50%", "🐒"),
+        ("3 Genie Wishes", "96.50%", "🧞"),
+        ("3 Kingdoms Battle of Red Cliffs", "96.50%", "⚔️"),
+        ("3 Magic Eggs", "96.50%", "🥚"),
+        ("5 Frozen Charms Megaways", "96.50%", "❄️"),
         ("5 Lions", "96.50%", "🦁"),
+        ("5 Lions Dance", "96.50%", "🦁"),
+        ("5 Lions Gold", "96.50%", "🦁"),
         ("5 Lions Megaways", "96.50%", "🦁"),
-        ("5 Lions Gold", "", "🦁"),
+        ("5 Lions Megaways 2", "96.50%", "🦁"),
+        ("5 Lions Reborn", "96.50%", "🦁"),
+        ("6 Jokers", "96.50%", "🃏"),
+        ("7 Clovers of Fortune", "96.50%", "🍀"),
+        ("7 Monkeys", "96.50%", "🐒"),
+        ("7 Piggies", "96.50%", "🐷"),
+        ("777 Rush", "96.50%", "7️⃣"),
+        ("8 Dragons", "96.50%", "🐉"),
+        ("8 Golden Dragon Challenge", "96.50%", "🐉"),
+        ("888 Dragons", "96.50%", "🐉"),
+        ("888 Gold", "96.50%", "💰"),
+        # A
+        ("African Elephant", "96.50%", "🐘"),
+        ("Aladdin and the Sorcerer", "96.50%", "🪔"),
+        ("Anaconda Gold", "96.50%", "🐍"),
+        ("Ancient Egypt", "96.50%", "🏺"),
+        ("Ancient Egypt Classic", "96.50%", "🏺"),
+        ("Ancient Island Megaways", "96.50%", "🏝️"),
+        ("Angel vs Sinner", "96.50%", "😇"),
+        ("Argonauts", "96.50%", "⚓"),
+        ("Asgard", "96.50%", "⚡"),
+        ("Aztec Blaze", "96.50%", "🔥"),
+        ("Aztec Bonanza", "96.50%", "🏺"),
         ("Aztec Gems", "96.50%", "🏺"),
         ("Aztec Gems Deluxe", "96.50%", "🏺"),
-        ("Aztec King Megaways", "", "👑"),
+        ("Aztec Gems Megaways", "96.50%", "🏺"),
+        ("Aztec Powernudge", "96.50%", "🏺"),
+        ("Aztec Smash", "96.50%", "🏺"),
+        ("Aztec Treasure Hunt", "96.50%", "🏺"),
+        # B
+        ("Badge Blitz", "96.50%", "🤠"),
+        ("Bandit Megaways", "96.50%", "🤠"),
+        ("Barn Festival", "96.50%", "🌾"),
+        ("Barnyard Megahays Megaways", "96.50%", "🐄"),
+        ("Bee Keeper", "96.50%", "🐝"),
+        ("Beware the Deep Megaways", "96.50%", "🦈"),
+        ("Big Bass Amazon Xtreme", "96.50%", "🎣"),
+        ("Big Bass Bonanza", "96.71%", "🎣"),
+        ("Big Bass Bonanza 1000", "96.50%", "🎣"),
+        ("Big Bass Bonanza 3 Reeler", "96.50%", "🎣"),
+        ("Big Bass Bonanza Megaways", "96.70%", "🎣"),
+        ("Big Bass Bonanza Reel Action", "96.50%", "🎣"),
+        ("Big Bass Christmas Bash", "96.50%", "🎄"),
+        ("Big Bass Christmas Frozen Lake", "96.50%", "❄️"),
+        ("Big Bass Crash", "96.50%", "💥"),
+        ("Big Bass Day at the Races", "96.50%", "🏇"),
+        ("Big Bass Dice", "96.50%", "🎲"),
+        ("Big Bass Floats My Boat", "96.50%", "🎣"),
+        ("Big Bass Halloween", "96.50%", "🎃"),
+        ("Big Bass Halloween 2", "96.50%", "🎃"),
+        ("Big Bass Halloween 3", "96.50%", "🎃"),
+        ("Big Bass Hold & Spinner Megaways", "96.50%", "🎣"),
+        ("Big Bass Keeping It Reel", "96.50%", "🎣"),
+        ("Big Bass Mission Fishin", "96.50%", "🎣"),
+        ("Big Bass Raceday Repeat", "96.50%", "🏇"),
+        ("Big Bass Reel Repeat", "96.50%", "🎣"),
+        ("Big Bass Splash", "96.71%", "🎣"),
+        ("Bigger Bass Splash", "96.50%", "🎣"),
+        ("Bingo Mania", "96.50%", "🎱"),
+        ("Black Bull", "96.50%", "🐂"),
+        ("Blade & Fangs", "96.50%", "🧛"),
+        ("Blazing Wilds Megaways", "96.50%", "🔥"),
+        ("Blitz Super Wheel", "96.50%", "🎡"),
+        ("Bloody Dawn", "96.50%", "🌅"),
+        ("Bomb Bonanza", "96.50%", "💣"),
+        ("Book of Golden Sands", "96.50%", "📖"),
+        ("Book of Kingdoms", "96.50%", "📖"),
+        ("Book of Monsters", "96.50%", "📖"),
+        ("Book of the Fallen", "96.50%", "📖"),
+        ("Book of Tut Megaways", "96.50%", "📖"),
+        ("Book of Vikings", "96.50%", "📖"),
+        ("Bounty Gold", "96.50%", "🏴‍☠️"),
+        ("Bounty Hunter", "96.50%", "🤠"),
+        ("Bow of Artemis", "96.50%", "🏹"),
+        ("Brick House Bonanza", "96.50%", "🐷"),
+        ("Buffalo King", "96.06%", "🦬"),
+        ("Buffalo King Megaways", "96.78%", "🦬"),
+        ("Buffalo King Untamed Megaways", "96.50%", "🦬"),
+        # C
+        ("Caishen's Cash", "96.50%", "💰"),
+        ("Caishen's Gold", "96.50%", "💰"),
+        ("Candy Blitz", "96.50%", "🍬"),
+        ("Candy Blitz Bombs", "96.50%", "🍬"),
+        ("Candy Corner", "96.50%", "🍬"),
+        ("Candy Jar Clusters", "96.50%", "🍬"),
+        ("Candy Stars", "96.50%", "🍬"),
+        ("Captain Kraken Megaways", "96.50%", "🐙"),
+        ("Cash Bonanza", "96.50%", "💵"),
+        ("Cash Box", "96.50%", "💵"),
+        ("Cash Chips", "96.50%", "💵"),
+        ("Cash Elevator", "96.50%", "🛗"),
+        ("Cash Patrol", "96.50%", "💵"),
+        ("Cash Surge", "96.50%", "💵"),
+        ("Castle of Fire", "96.50%", "🔥"),
+        ("Chase for Glory", "96.50%", "🏆"),
+        ("Chests of Cai Shen", "96.50%", "💰"),
+        ("Chests of Cai Shen 2", "96.50%", "💰"),
+        ("Chicken Chase", "96.50%", "🐔"),
+        ("Chicken Drop", "96.50%", "🐔"),
+        ("Chicken+", "96.50%", "🐔"),
+        ("Chilli Heat", "96.50%", "🌶️"),
+        ("Chilli Heat Megaways", "96.50%", "🌶️"),
+        ("Chilli Heat Spicy Spins", "96.50%", "🌶️"),
+        ("Christmas Big Bass Bonanza", "96.50%", "🎄"),
+        ("Christmas Carol Megaways", "96.50%", "🎄"),
+        ("Cleocatra", "96.50%", "🐱"),
+        ("Clover Gold", "96.50%", "🍀"),
+        ("Club Tropicana", "96.50%", "🌴"),
+        ("Colossal Cash Zone", "96.50%", "💰"),
+        ("Congo Cash", "96.50%", "🦍"),
+        ("Congo Cash XL", "96.50%", "🦍"),
+        ("Country Framing", "96.50%", "🚜"),
+        ("Cowboys Gold", "96.50%", "🤠"),
+        ("Cowboy Coins", "96.50%", "🤠"),
+        ("Crank It Up", "96.50%", "🎸"),
+        ("Crown of Fire", "96.50%", "👑"),
+        ("Crystal Caverns Megaways", "96.50%", "💎"),
+        ("Cult.", "96.50%", "🔮"),
+        ("Curse of the Werewolf Megaways", "96.50%", "🐺"),
+        ("Cyberheist City", "96.50%", "🤖"),
+        ("Cyclops Smash", "96.50%", "👁️"),
+        # D
+        ("Da Vinci's Treasure", "96.50%", "🎨"),
+        ("Dance Party", "96.50%", "🕺"),
+        ("Darts", "96.50%", "🎯"),
+        ("Day of Dead", "96.50%", "💀"),
+        ("Demon Pots", "96.50%", "😈"),
+        ("Devilicious", "96.50%", "😈"),
+        ("Diamond Cascade", "96.50%", "💎"),
+        ("Diamond Strike", "96.50%", "💎"),
+        ("Diamonds Are Forever 3 Lines", "96.50%", "💎"),
+        ("Diamonds of Egypt", "96.50%", "💎"),
+        ("Ding Dong Christmas Bells", "96.50%", "🔔"),
+        ("Dino Drop", "96.50%", "🦖"),
+        ("Down the Rails", "96.50%", "🚂"),
+        ("Drago – Jewels of Fortune", "96.50%", "🐉"),
+        ("Dragon Gold 88", "96.50%", "🐉"),
+        ("Dragon Hero", "96.50%", "🐉"),
+        ("Dragon Hot Hold & Spin", "96.50%", "🐉"),
+        ("Dragon King Hot Pots", "96.50%", "🐉"),
+        ("Dragon Kingdom", "96.50%", "🐉"),
+        ("Dragon Tiger Fortunes", "96.50%", "🐉"),
+        ("Drill That Gold", "96.50%", "⛏️"),
+        ("Duel of Night & Day", "96.50%", "⚔️"),
+        ("Dwarf & Dragon", "96.50%", "🐉"),
+        ("Dwarven Gold Deluxe", "96.50%", "⛏️"),
+        ("Dynamite Diggin Doug", "96.50%", "💥"),
+        # E
+        ("Egyptian Fortunes", "96.50%", "🏺"),
+        ("Elemental Gems Megaways", "96.50%", "💎"),
+        ("Emerald King", "96.50%", "💎"),
+        ("Emerald King Rainbow Road", "96.50%", "💎"),
+        ("Emerald King Wheel of Wealth", "96.50%", "💎"),
+        ("Empty the Bank", "96.50%", "🏦"),
+        ("Escape the Pyramid Fire & Ice", "96.50%", "🏺"),
+        ("Eternal Empress Freeze Time", "96.50%", "👸"),
+        ("Excalibur Unleashed", "96.50%", "⚔️"),
+        ("Extra Juicy", "96.50%", "🍉"),
+        ("Extra Juicy Megaways", "96.52%", "🍉"),
+        ("Eye of Cleopatra", "96.50%", "👁️"),
+        ("Eye of Spartacus", "96.50%", "🛡️"),
+        ("Eye of the Storm", "96.50%", "🌪️"),
+        # F
+        ("Fairytale Fortune", "96.50%", "🧚"),
+        ("Fangtastic Freespins", "96.50%", "🧛"),
+        ("Fantastic League", "96.50%", "⚽"),
+        ("Fat Panda", "96.50%", "🐼"),
+        ("Fire 88", "96.50%", "🔥"),
+        ("Fire Archer", "96.50%", "🏹"),
+        ("Fire Hot 100", "96.50%", "🔥"),
+        ("Fire Hot 20", "96.50%", "🔥"),
+        ("Fire Hot 40", "96.50%", "🔥"),
+        ("Fire Hot 5", "96.50%", "🔥"),
+        ("Fire Portals", "96.50%", "🔥"),
+        ("Fire Stampede", "96.50%", "🦬"),
+        ("Fire Stampede 2", "96.50%", "🦬"),
+        ("Fire Stampede Ultimate", "96.50%", "🦬"),
+        ("Fire Strike", "96.50%", "🔥"),
+        ("Fire Strike 2", "96.50%", "🔥"),
+        ("Firebird Spirit", "96.50%", "🐦"),
+        ("Fish Eye", "96.50%", "🐟"),
+        ("Fishin' Reels", "96.50%", "🎣"),
+        ("Floating Dragon Dragon Boat Festival", "96.50%", "🐉"),
+        ("Floating Dragon Hold & Spin", "96.50%", "🐉"),
+        ("Floating Dragon Wild Horses", "96.50%", "🐉"),
+        ("Floating Dragon Year of the Snake", "96.50%", "🐍"),
+        ("Fonzo's FelineFortunes", "96.50%", "🐱"),
+        ("Force 1", "96.50%", "🏎️"),
+        ("Forge of Olympus", "96.50%", "⚡"),
+        ("Forging Wilds", "96.50%", "🔨"),
+        ("Fortune Hit'n Roll", "96.50%", "💰"),
+        ("Fortune of Giza", "96.50%", "🏺"),
+        ("Fortune of Olympus", "96.50%", "⚡"),
+        ("Fortunes of Aztec", "96.50%", "🏺"),
+        ("Frightening Frankie", "96.50%", "🧟"),
+        ("Front Runner Odds On", "96.50%", "🏇"),
+        ("Frozen Tropics", "96.50%", "❄️"),
+        ("Fruit Party", "96.50%", "🍓"),
+        ("Fruit Party 2", "96.50%", "🍓"),
+        ("Fruity Treats", "96.50%", "🍬"),
+        ("Fury of Odin Megaways", "96.50%", "⚡"),
+        # G
+        ("Gates of Hades", "96.50%", "💀"),
+        ("Gates of Olympus", "96.50%", "⚡"),
+        ("Gates of Olympus 1000", "96.50%", "⚡"),
+        ("Gates of Olympus Dice", "96.50%", "⚡"),
+        ("Gates of Olympus Super Scatter", "96.50%", "⚡"),
+        ("Gates of Olympus Xmas 1000", "96.50%", "⚡"),
+        ("Gates of Valhalla", "96.50%", "⚔️"),
+        ("Gears of Horus", "96.50%", "⚙️"),
+        ("Gem Elevator", "96.50%", "💎"),
+        ("Gems Bonanza", "96.50%", "💎"),
+        ("Gems of Serengeti", "96.50%", "💎"),
+        ("Genie's Gem Bonanza", "96.50%", "💎"),
+        ("Goblin Heist Powernudge", "96.50%", "👺"),
+        ("Gods of Giza", "96.50%", "🏺"),
+        ("Gold Oasis", "96.50%", "💰"),
+        ("Gold Party", "96.50%", "🥇"),
+        ("Gold Rush", "96.50%", "⭐"),
+        ("Gold Train", "96.50%", "🚂"),
+        ("Good Luck & Good Fortune", "96.50%", "🍀"),
+        ("Gorilla Mayhem", "96.50%", "🦍"),
+        ("Gosmic Cash", "96.50%", "🚀"),
+        ("Gravity Bonanza", "96.50%", "🌌"),
+        ("Great Reef", "96.50%", "🐠"),
+        ("Great Rhino", "95.97%", "🦏"),
+        ("Great Rhino Deluxe", "96.50%", "🦏"),
+        ("Great Rhino Megaways", "96.58%", "🦏"),
+        ("Greedy Fortune Pig", "96.50%", "🐷"),
+        ("Greedy Wolf", "96.50%", "🐺"),
+        ("Greek Gods", "96.50%", "⚡"),
+        ("Greyhound Racing", "96.50%", "🐕"),
+        # H
+        ("Hammer Storm", "96.50%", "🔨"),
+        ("Hand of Midas 2", "96.50%", "✋"),
+        ("Happy Dragon", "96.50%", "🐉"),
+        ("Happy Hooves", "96.50%", "🐴"),
+        ("Haunted Crypt", "96.50%", "💀"),
+        ("Heart of Cleopatra", "96.50%", "💗"),
+        ("Heart of Rio", "96.50%", "❤️"),
+        ("Heist for the Golden Nuggets", "96.50%", "💰"),
+        ("Hellvis Wild", "96.50%", "🎸"),
+        ("Hercules and Pegasus", "96.50%", "🦅"),
+        ("Hercules Son of Zeus", "96.50%", "💪"),
+        ("Heroic Spins", "96.50%", "🛡️"),
+        ("High Flyer", "96.50%", "✈️"),
+        ("Himalayan Wild", "96.50%", "🐆"),
+        ("Honey Honey Honey", "96.50%", "🍯"),
+        ("Horse Racing", "96.50%", "🏇"),
+        ("Hot Chilli", "96.50%", "🌶️"),
+        ("Hot Fiesta", "96.08%", "🌶️"),
+        ("Hot Pepper", "96.50%", "🌶️"),
+        ("Hot Safari", "96.50%", "🦁"),
+        ("Hot Tuna", "96.50%", "🐟"),
+        ("Hot to Burn", "96.50%", "🔥"),
+        ("Hot to Burn Extreme", "96.50%", "🔥"),
+        ("Hot to Burn Hold and Spin", "96.50%", "🔥"),
+        ("Hot to Burn Multiplier", "96.50%", "🔥"),
+        ("Hot to Burn 7 Deadly", "96.50%", "🔥"),
+        ("Hundreds and Thousands", "96.50%", "🍰"),
+        # I
+        ("Ice Lobster", "96.50%", "🦞"),
+        ("Ice Mints", "96.50%", "❄️"),
+        ("Infective Wild", "96.50%", "🧟"),
+        ("Irish Charms", "96.50%", "🍀"),
+        ("Irish Crown", "96.50%", "🍀"),
+        # J
+        ("Jackpot Blaze", "96.50%", "7️⃣"),
+        ("Jackpot Hunter", "96.50%", "🏆"),
+        ("Jade Butterfly", "96.50%", "🦋"),
+        ("Jane Hunter and the Mask of Montezuma", "96.50%", "🏺"),
+        ("Jasmine Dreams", "96.50%", "🌸"),
+        ("Jeitinho Brasileiro", "96.50%", "🇧🇷"),
+        ("Jelly Express", "96.50%", "🍬"),
+        ("Jewel Rush", "96.50%", "💎"),
+        ("John Hunter and the Aztec Treasure", "96.50%", "🏺"),
+        ("John Hunter and the Book of Tut", "96.50%", "📖"),
+        ("John Hunter and the Book of Tut Respin", "96.50%", "📖"),
+        ("John Hunter and the Mayan Gods", "96.50%", "🏺"),
+        ("John Hunter & the Quest for Bermuda Riches", "96.50%", "🏝️"),
+        ("John Hunter & the Tomb of the Scarab Queen", "96.50%", "🐞"),
+        ("Joker King", "96.50%", "🃏"),
+        ("Joker's Jewels", "96.50%", "🃏"),
+        ("Joker's Jewels Cash", "96.50%", "🃏"),
+        ("Joker's Jewels Dice", "96.50%", "🃏"),
+        ("Joker's Jewels Hold & Spin", "96.50%", "🃏"),
+        ("Joker's Jewels Hot", "96.50%", "🃏"),
+        ("Joker's Jewels Wild", "96.50%", "🃏"),
+        ("Journey to the West", "96.50%", "🐒"),
+        ("Juicy Fruits", "96.50%", "🍓"),
+        ("Juicy Fruits Multihold", "96.50%", "🍓"),
+        ("Jungle Gorilla", "96.50%", "🦍"),
+        # K
+        ("Kingdom of the Dead", "96.50%", "💀"),
+        ("Knight Hot Spotz", "96.50%", "⚔️"),
+        ("Knights vs Barbarians", "96.50%", "⚔️"),
+        # L
+        ("Lady Godiva", "96.50%", "🐴"),
+        ("Lamp of Infinity", "96.50%", "🪔"),
+        ("Lava Balls", "96.50%", "🌋"),
+        ("Leprechaun Carol", "96.50%", "🍀"),
+        ("Leprechaun Song", "96.50%", "🍀"),
+        ("Little Gem", "96.50%", "💎"),
+        ("Lobster Bob's Crazy Crab Shack", "96.50%", "🦞"),
+        ("Lobster Bob's Sea Food and Win It", "96.50%", "🦞"),
+        ("Lobster House", "96.50%", "🦞"),
+        ("Loki's Riches", "96.50%", "⚡"),
+        ("Lucky Dragons", "96.50%", "🐉"),
+        ("Lucky Grace and Charm", "96.50%", "🍀"),
+        ("Lucky Lightning", "96.50%", "⚡"),
+        ("Lucky New Year", "96.50%", "🎆"),
+        ("Lucky's Wild Pub", "96.50%", "🍺"),
+        ("Lucky's Wild Pub 2", "96.50%", "🍺"),
+        # M
+        ("Madame Destiny", "96.50%", "🔮"),
+        ("Madame Destiny Megaways", "96.50%", "🔮"),
+        ("Magic Journey", "96.50%", "🌟"),
+        ("Magic Money Maze", "96.50%", "💰"),
+        ("Magician's Secrets", "96.50%", "🎩"),
+        ("Mahjong Wins Super Scatter", "96.50%", "🀄"),
+        ("Mammoth Gold Megaways", "96.50%", "🦣"),
+        ("Master Chen's Fortune", "96.50%", "💰"),
+        ("Master Joker", "96.50%", "🃏"),
+        ("Medusa's Stone", "96.50%", "🐍"),
+        ("Mermaid's Treasure Trove", "96.50%", "🧜"),
+        ("Might of Freya Megaways", "96.50%", "⚡"),
+        ("Might of Ra", "96.50%", "☀️"),
+        ("Mighty Kong", "96.50%", "🦍"),
+        ("Mighty Munching Melons", "96.50%", "🍈"),
+        ("Mining Rush", "96.50%", "⛏️"),
+        ("Mochimon", "96.50%", "🎭"),
+        ("Moleiona Ire", "96.50%", "🐀"),
+        ("Money Mouse", "96.50%", "🐭"),
+        ("Money Stacks", "96.50%", "💵"),
+        ("Money Stacks Dice", "96.50%", "🎲"),
+        ("Money Stacks Megaways", "96.50%", "💵"),
+        ("Monkey Madness", "96.50%", "🐒"),
+        ("Monkey Warrior", "96.50%", "🐒"),
+        ("Monster Superlanche", "96.50%", "👹"),
+        ("Muertos Multiplier Megaways", "96.50%", "💀"),
+        ("Mummy's Jewels 100", "96.50%", "🏺"),
+        ("Mustang Gold", "96.50%", "🐎"),
+        ("Mustang Gold Megaways", "96.50%", "🐎"),
+        ("Mustang Trail", "96.50%", "🐎"),
+        ("Mysterious", "96.50%", "🔮"),
+        ("Mysterious Egypt", "96.50%", "🏺"),
+        ("Mystery Mice", "96.50%", "🐭"),
+        ("Mystery of the Orient", "96.50%", "🏮"),
+        ("Mystic Chief", "96.50%", "🪶"),
+        # N
+        ("New Year Festival Floating Dragon", "96.50%", "🐉"),
+        ("Nile Fortune", "96.50%", "🏺"),
+        ("North Guardians", "96.50%", "🛡️"),
+        # O
+        ("O Vira-Lata Caramelo", "96.50%", "🐕"),
+        ("Octobeer Fortunes", "96.50%", "🍺"),
+        ("Oodles of Noodles", "96.50%", "🍜"),
+        ("Oracle of Gold", "96.50%", "🔮"),
+        # P
+        ("Pandemic Rising", "96.50%", "🦠"),
+        ("Panda's Fortune", "96.50%", "🐼"),
+        ("Panda's Fortune 2", "96.50%", "🐼"),
+        ("Peak Power", "96.50%", "⚡"),
+        ("Peking Luck", "96.50%", "🏮"),
+        ("Penalty Shootout", "96.50%", "⚽"),
+        ("Piggy Bank Bills", "96.50%", "🐷"),
+        ("Piggy Bankers", "96.50%", "🐷"),
+        ("Pinup Girls", "96.50%", "💄"),
+        ("Pirate Gold", "96.50%", "🏴‍☠️"),
+        ("Pirate Gold Deluxe", "96.50%", "🏴‍☠️"),
+        ("Pirate Golden Age", "96.50%", "🏴‍☠️"),
+        ("Pirates Pub", "96.50%", "🏴‍☠️"),
+        ("Pixie Wings", "96.50%", "🧚"),
+        ("Pizza! Pizza? Pizza!", "96.50%", "🍕"),
+        ("Plinko+", "96.50%", "🔴"),
+        ("Pompeii Megareels Megaways", "96.50%", "🌋"),
+        ("Pot of Fortune", "96.50%", "🍀"),
+        ("Power of Merlin Megaways", "96.50%", "⚡"),
+        ("Power of Thor Megaways", "96.55%", "⚡"),
+        # Q-R
+        ("Release the Kraken", "96.50%", "🐙"),
+        # S
+        ("Starlighta Princess", "96.50%", "⭐"),
+        ("Sugar Rush", "96.50%", "🍬"),
+        ("Sugar Rush 1000", "96.50%", "🍬"),
+        ("Sweet Bonanza", "96.51%", "🍭"),
+        ("Sweet Bonanza 1000", "96.50%", "🍭"),
+        ("Sweet Bonanza Xmas", "96.48%", "🎄"),
+        # T
+        ("The Dog House", "96.51%", "🐶"),
+        ("The Dog House Megaways", "96.55%", "🐶"),
+        ("Touro Sortudo", "96.50%", "🐂"),
+        # W
         ("Wild West Gold", "96.51%", "🤠"),
         ("Wild West Gold Megaways", "96.54%", "🤠"),
-        ("Pirate Gold", "96.50%", "🏴‍☠️"),
-        ("Pirate Gold Deluxe", "", "🏴‍☠️"),
-        ("Queen of Gold", "96.50%", "👑"),
-        ("Emerald King", "96.50%", "💎"),
-        ("Cyber Heist", "96.50%", "🤖"),
-        ("Spaceman", "96.50%", "🚀"),
-        ("Zeus Unleashed", "96.50%", "⚡"),
-        ("Hades Inferno", "96.50%", "🔥"),
-        ("Fire Strike", "", "🔥"),
-        ("Book of Tut", "", "📖"),
-        ("Cash Elevator", "", "🛗"),
-        ("Wild Wild Riches", "", "🤠"),
-        ("Eye of Cleopatra", "", "👁️"),
-        ("Piggy Bankers", "", "🐷"),
-        ("Joker's Jewels", "", "🃏"),
-        ("Idol Pop Fever", "", "🎤"),
-        ("Snow Party", "", "❄️"),
-        ("Jelly Express", "", "🍬"),
-        ("Triple Pot Diamond", "", "💎"),
-        ("Happy Dragon", "", "🐉"),
-        ("Steamin' Reels", "", "🚂"),
-        ("CULT", "", "🔮"),
-        ("Lucky's Wild Pub 2", "", "🍺"),
-        ("Big Bass Raceday Repeat", "", "🏇"),
-        ("Diamond Strike", "", "💎"),
-        ("Vegas Nights", "", "🎰"),
-        ("Book of Kingdoms", "", "📖"),
-        ("Book of Aztec", "", "📖"),
-        ("Queen of Atlantis", "", "🌊"),
-        ("Octobeer", "", "🍺"),
-        ("Vikings Unleashed", "", "⚔️"),
-        ("Gladiator Legends", "", "🛡️"),
-        ("Zombie Carnival", "", "🧟"),
-        ("Curse of the Werewolf", "", "🐺"),
-        ("Magician's Secret", "", "🎩"),
+        ("Wolf Gold", "96.01%", "🐺"),
     ],
     "Hacksaw": [
         ("2 Wild 2 Die", "96.30%", "💥"),
@@ -392,65 +716,6 @@ PROVIDER_GAMES = {
         ("Mini Roulette", "", "🎡"),
         ("Plinko", "", "🔴"),
     ],
-    "Microgaming": [
-        ("Immortal Romance", "", "🧛"),
-        ("Thunderstruck II", "", "⚡"),
-        ("Break da Bank Again", "", "🏦"),
-        ("Ladies Nite", "", "🌙"),
-        ("Jurassic Park", "", "🦖"),
-        ("Mayan Princess", "", "👑"),
-        ("Lucky Riches Hyperspins", "", "💰"),
-        ("Game of Thrones", "", "🐉"),
-        ("Dead or Alive 2", "", "🤠"),
-        ("Book of Oz", "", "📖"),
-    ],
-    "BGaming": [
-        ("Wild Tiger", "", "🐯"),
-        ("Bonanza Billion", "", "💰"),
-        ("Fruit Million", "", "🍎"),
-        ("Burning Chilli X", "", "🌶️"),
-        ("Wild Clusters", "", "🍇"),
-        ("Lucky Lady Moon", "", "🌙"),
-        ("Elvis Frog in Vegas", "", "🐸"),
-        ("Merge Up", "", "🧩"),
-        ("Space XY", "", "🚀"),
-        ("Alice WonderLuck", "", "🐇"),
-    ],
-    "Ruby Play": [
-        ("Diamond Explosion 7s", "", "💎"),
-        ("Mayan Cache", "", "🏺"),
-        ("Go High Panda", "", "🐼"),
-        ("Shake Shake Money Tree", "", "🌳"),
-        ("Immortal Ways Diamonds", "", "💠"),
-    ],
-    "Playson": [
-        ("Coin Strike Hold and Win", "", "🪙"),
-        ("Buffalo Power Hold and Win", "", "🦬"),
-        ("Royal Coins 2 Hold and Win", "", "👑"),
-        ("Luxor Gold Hold and Win", "", "🏺"),
-        ("Book del Sol", "", "📖"),
-    ],
-    "Endorphina": [
-        ("Lucky Streak 1000", "", "🍀"),
-        ("2027 ISS", "", "🚀"),
-        ("Hell Hot 100", "", "🔥"),
-        ("Minotaurus", "", "🐂"),
-        ("Book of Santa", "", "🎅"),
-    ],
-    "3 Oaks Gaming": [
-        ("Coin Volcano", "", "🌋"),
-        ("Sun of Egypt 3", "", "☀️"),
-        ("3 Hot Chillies", "", "🌶️"),
-        ("Lucky Penny", "", "🪙"),
-        ("Grab the Gold", "", "🥇"),
-    ],
-    "Red Tiger": [
-        ("Dragon's Fire Megaways", "", "🐉"),
-        ("Athens Megaways", "", "🏛️"),
-        ("Cash Volt", "", "⚡"),
-        ("Gonzo's Quest Megaways", "", "🗺️"),
-        ("Pirates' Plenty Battle for Gold", "", "🏴‍☠️"),
-    ],
     "Spirit": [
         ("Ace Wild", "", "🃏"),
         ("Carnival", "", "🎭"),
@@ -484,43 +749,6 @@ PROVIDER_GAMES = {
         ("Penalty Shootout", "97.00%", "⚽"),
         ("Plinko", "99.00%", "🔴"),
         ("Tower", "97.00%", "🗼"),
-    ],
-    "Betby": [
-        ("Betby Dice", "", "🎲"),
-        ("Betby Mines", "", "💣"),
-        ("Betby Crash", "", "💥"),
-    ],
-    "Easybet": [
-        ("Easy Crash", "", "💥"),
-        ("Easy Dice", "", "🎲"),
-        ("Easy Mines", "", "💣"),
-    ],
-    "1Bet": [
-        ("1Bet Crash", "", "💥"),
-        ("1Bet Dice", "", "🎲"),
-        ("1Bet Mines", "", "💣"),
-    ],
-    "BB Games": [
-        ("Book of Darkness", "", "📖"),
-        ("Candy Boom", "", "🍬"),
-        ("Golden Riches", "", "💰"),
-    ],
-    "Pateplay": [
-        ("Pate Crash", "", "💥"),
-        ("Pate Dice", "", "🎲"),
-        ("Pate Fortune", "", "🍀"),
-    ],
-    "759 Gaming": [
-        ("Fortune Gems", "", "💎"),
-        ("Super Ace", "", "🂡"),
-        ("Lucky Panda 759", "", "🐼"),
-        ("Golden Dragon 759", "", "🐉"),
-        ("Wild Phoenix", "", "🔥"),
-        ("Monkey Riches", "", "🐒"),
-        ("Fortune Queen", "", "👑"),
-        ("Treasure Spin", "", "🏺"),
-        ("Lucky Lantern", "", "🏮"),
-        ("Cash Wheel", "", "💵"),
     ],
     "Revenge Games": [
         ("Fortune Mouse 2", "", "🐭"),
@@ -595,11 +823,6 @@ PROVIDER_GAMES = {
         ("Treasures of Hades", "", "💀"),
         ("Wheel of Wealth", "", "🎡"),
         ("Year of the Golden Horse", "", "🐎"),
-    ],
-    "Fat Panda": [
-        ("Panda Panda", "", "🐼"),
-        ("Lucky Panda", "", "🐼"),
-        ("Panda Gold", "", "🐼"),
     ],
     "Funky Games": [
         ("5 Dragons Legend", "", "🐉"),
@@ -739,6 +962,102 @@ PROVIDER_GAMES = {
         ("White Tiger", "", "🐯"),
         ("Zombie Killer", "", "🧟"),
     ],
+    "Microgaming": [
+        ("Immortal Romance", "", "🧛"),
+        ("Thunderstruck II", "", "⚡"),
+        ("Break da Bank Again", "", "🏦"),
+        ("Ladies Nite", "", "🌙"),
+        ("Jurassic Park", "", "🦖"),
+        ("Mayan Princess", "", "👑"),
+        ("Lucky Riches Hyperspins", "", "💰"),
+        ("Game of Thrones", "", "🐉"),
+        ("Dead or Alive 2", "", "🤠"),
+        ("Book of Oz", "", "📖"),
+    ],
+    "BGaming": [
+        ("Wild Tiger", "", "🐯"),
+        ("Bonanza Billion", "", "💰"),
+        ("Fruit Million", "", "🍎"),
+        ("Burning Chilli X", "", "🌶️"),
+        ("Wild Clusters", "", "🍇"),
+        ("Lucky Lady Moon", "", "🌙"),
+        ("Elvis Frog in Vegas", "", "🐸"),
+        ("Merge Up", "", "🧩"),
+        ("Space XY", "", "🚀"),
+        ("Alice WonderLuck", "", "🐇"),
+    ],
+    "Ruby Play": [
+        ("Diamond Explosion 7s", "", "💎"),
+        ("Mayan Cache", "", "🏺"),
+        ("Go High Panda", "", "🐼"),
+        ("Shake Shake Money Tree", "", "🌳"),
+        ("Immortal Ways Diamonds", "", "💠"),
+    ],
+    "Playson": [
+        ("Coin Strike Hold and Win", "", "🪙"),
+        ("Buffalo Power Hold and Win", "", "🦬"),
+        ("Royal Coins 2 Hold and Win", "", "👑"),
+        ("Luxor Gold Hold and Win", "", "🏺"),
+        ("Book del Sol", "", "📖"),
+    ],
+    "Endorphina": [
+        ("Lucky Streak 1000", "", "🍀"),
+        ("2027 ISS", "", "🚀"),
+        ("Hell Hot 100", "", "🔥"),
+        ("Minotaurus", "", "🐂"),
+        ("Book of Santa", "", "🎅"),
+    ],
+    "3 Oaks Gaming": [
+        ("Coin Volcano", "", "🌋"),
+        ("Sun of Egypt 3", "", "☀️"),
+        ("3 Hot Chillies", "", "🌶️"),
+        ("Lucky Penny", "", "🪙"),
+        ("Grab the Gold", "", "🥇"),
+    ],
+    "Red Tiger": [
+        ("Dragon's Fire Megaways", "", "🐉"),
+        ("Athens Megaways", "", "🏛️"),
+        ("Cash Volt", "", "⚡"),
+        ("Gonzo's Quest Megaways", "", "🗺️"),
+        ("Pirates' Plenty Battle for Gold", "", "🏴‍☠️"),
+    ],
+    "Betby": [
+        ("Betby Dice", "", "🎲"),
+        ("Betby Mines", "", "💣"),
+        ("Betby Crash", "", "💥"),
+    ],
+    "Easybet": [
+        ("Easy Crash", "", "💥"),
+        ("Easy Dice", "", "🎲"),
+        ("Easy Mines", "", "💣"),
+    ],
+    "1Bet": [
+        ("1Bet Crash", "", "💥"),
+        ("1Bet Dice", "", "🎲"),
+        ("1Bet Mines", "", "💣"),
+    ],
+    "BB Games": [
+        ("Book of Darkness", "", "📖"),
+        ("Candy Boom", "", "🍬"),
+        ("Golden Riches", "", "💰"),
+    ],
+    "Pateplay": [
+        ("Pate Crash", "", "💥"),
+        ("Pate Dice", "", "🎲"),
+        ("Pate Fortune", "", "🍀"),
+    ],
+    "759 Gaming": [
+        ("Fortune Gems", "", "💎"),
+        ("Super Ace", "", "🂡"),
+        ("Lucky Panda 759", "", "🐼"),
+        ("Golden Dragon 759", "", "🐉"),
+        ("Wild Phoenix", "", "🔥"),
+        ("Monkey Riches", "", "🐒"),
+        ("Fortune Queen", "", "👑"),
+        ("Treasure Spin", "", "🏺"),
+        ("Lucky Lantern", "", "🏮"),
+        ("Cash Wheel", "", "💵"),
+    ],
     "Playtech": [
         ("Buffalo Blitz", "", "🦬"),
         ("Age of the Gods", "", "⚡"),
@@ -763,7 +1082,13 @@ PROVIDER_GAMES = {
         ("Sherwood Gold", "", "🏹"),
         ("Golden Lion", "", "🦁"),
     ],
+    "Fat Panda": [
+        ("Panda Panda", "", "🐼"),
+        ("Lucky Panda", "", "🐼"),
+        ("Panda Gold", "", "🐼"),
+    ],
 }
+
 
 INTRO_VARIANTS = [
     "🎰 Entrada confirmada",
@@ -824,16 +1149,16 @@ STRATEGY_VARIANTS = {
         "💎 Estilo Premium Plinko:\n• Prefira as colunas centrais\n• Sessão curta com stop definido\n• Bet constante sem variação\n• Stop loss: 20% da banca",
     ],
     "scratch": [
-        "💎 Estilo Premium Football Scratch:\n• Jogue em bet baixa e fixa\n• Máximo 5 raspadinhas por sessão\n• Não aumente a bet após perda\n• Se ganhar, pare — não reinvista tudo",
-        "💎 Estilo Premium Football Scratch:\n• Sessão curta e controlada\n• Bet mínima para mais volume de jogadas\n• Stop win: dobrou a banca = encerra\n• Stop loss: 5 tentativas sem retorno",
+        "💎 Estilo Premium Scratch:\n• Jogue em bet baixa e fixa\n• Máximo 5 raspadinhas por sessão\n• Não aumente a bet após perda\n• Se ganhar, pare — não reinvista tudo",
+        "💎 Estilo Premium Scratch:\n• Sessão curta e controlada\n• Bet mínima para mais volume de jogadas\n• Stop win: dobrou a banca = encerra\n• Stop loss: 5 tentativas sem retorno",
     ],
     "coin_flip": [
         "💎 Estilo Premium Heads Tails:\n• Escolha sempre o mesmo lado por sessão\n• Bet fixa sem dobrar após perda\n• Máximo 8 rodadas por sessão\n• Stop loss: 5 derrotas seguidas = encerra",
         "💎 Estilo Premium Heads Tails:\n• Não troque de lado no meio da sessão\n• Gestão fixa sem martingale\n• Sessão disciplinada e curta\n• Lucro pequeno e consistente",
     ],
     "wheel": [
-        "💎 Estilo Premium Lucky Wheel:\n• Aposte nos campos de menor multiplicador\n• Bet fixa e pequena\n• Máximo 10 giros por sessão\n• Não persiga o multiplicador máximo",
-        "💎 Estilo Premium Lucky Wheel:\n• Foque nos campos com maior frequência\n• Bet constante sem variação\n• Sessão curta com meta definida\n• Stop loss: 30% da banca",
+        "💎 Estilo Premium Wheel:\n• Aposte nos campos de menor multiplicador\n• Bet fixa e pequena\n• Máximo 10 giros por sessão\n• Não persiga o multiplicador máximo",
+        "💎 Estilo Premium Wheel:\n• Foque nos campos com maior frequência\n• Bet constante sem variação\n• Sessão curta com meta definida\n• Stop loss: 30% da banca",
     ],
     "penalty": [
         "💎 Estilo Premium Penalty Shootout:\n• Escolha sempre o mesmo canto por sessão\n• Bet fixa sem progressão\n• Máximo 8 cobranças por sessão\n• Stop loss: 4 erros seguidos = pausa",
@@ -852,16 +1177,37 @@ STRATEGY_VARIANTS = {
         "💎 Estilo Premium Keno:\n• Não troque os números no meio da sessão\n• Gestão disciplinada e bet constante\n• Sessão curta com meta definida\n• Stop win: triplicou = encerra",
     ],
     "roulette": [
-        "💎 Estilo Premium Mini Roulette:\n• Aposte nas cores (vermelho ou preto) com bet fixa\n• Não use progressão após perda\n• Máximo 10 rodadas por sessão\n• Stop loss: 25% da banca\n• Escolha um lado e mantenha por toda a sessão",
-        "💎 Estilo Premium Mini Roulette:\n• Foque nas apostas de maior frequência\n• Bet pequena e constante\n• Sessão curta e disciplinada\n• Stop win: dobrou = encerra\n• Evite apostar em números únicos",
+        "💎 Estilo Premium Roleta:\n• Aposte nas cores (vermelho ou preto) com bet fixa\n• Não use progressão após perda\n• Máximo 10 rodadas por sessão\n• Stop loss: 25% da banca\n• Escolha um lado e mantenha por toda a sessão",
+        "💎 Estilo Premium Roleta:\n• Foque nas apostas de maior frequência\n• Bet pequena e constante\n• Sessão curta e disciplinada\n• Stop win: dobrou = encerra\n• Evite apostar em números únicos",
     ],
     "runner": [
-        "💎 Estilo Premium Chicken Uncrossable:\n• Comece com bet baixa até pegar o ritmo\n• Foque em desviar dos obstáculos sem pressa\n• Não aumente a bet em sequência negativa\n• Máximo 10 partidas por sessão\n• Stop loss: 20% da banca",
-        "💎 Estilo Premium Chicken Uncrossable:\n• Bet fixa e pequena por partida\n• Concentração total — não jogue apressado\n• Sessão curta com meta definida\n• Stop win: dobrou = encerra\n• Pare ao perder 4 seguidas",
+        "💎 Estilo Premium Runner:\n• Comece com bet baixa até pegar o ritmo\n• Foque em desviar dos obstáculos sem pressa\n• Não aumente a bet em sequência negativa\n• Máximo 10 partidas por sessão\n• Stop loss: 20% da banca",
+        "💎 Estilo Premium Runner:\n• Bet fixa e pequena por partida\n• Concentração total — não jogue apressado\n• Sessão curta com meta definida\n• Stop win: dobrou = encerra\n• Pare ao perder 4 seguidas",
+    ],
+    "baccarat": [
+        "💎 Estilo Premium Baccarat:\n• Aposte sempre no Banker (menor vantagem da casa)\n• Bet fixa sem progressão\n• Máximo 10 mãos por sessão\n• Stop loss: 20% da banca\n• Não aposte no Tie",
+        "💎 Estilo Premium Baccarat:\n• Mantenha a aposta no Banker por toda a sessão\n• Gestão disciplinada sem martingale\n• Sessão curta e objetiva\n• Stop win: 30% de lucro = encerra",
+    ],
+    "blackjack": [
+        "💎 Estilo Premium Blackjack:\n• Siga sempre a estratégia básica\n• Bet fixa sem dobrar no tilt\n• Máximo 10 mãos por sessão\n• Stop loss: 20% da banca\n• Dobrar só no 10 ou 11 contra carta fraca do dealer",
+        "💎 Estilo Premium Blackjack:\n• Disciplina total na estratégia básica\n• Gestão fixa sem progressão agressiva\n• Sessão curta com meta definida\n• Stop win: dobrou = encerra",
+    ],
+    "racing": [
+        "💎 Estilo Premium Racing:\n• Escolha sempre o mesmo competidor por sessão\n• Bet fixa sem progressão\n• Máximo 8 apostas por sessão\n• Stop loss: 4 derrotas seguidas = pausa\n• Não mude de favorito no meio da sessão",
+        "💎 Estilo Premium Racing:\n• Analise o histórico antes de apostar\n• Bet pequena e constante\n• Sessão curta e disciplinada\n• Stop win: dobrou = encerra",
+    ],
+    "bingo": [
+        "💎 Estilo Premium Bingo:\n• Jogue com bet fixa e pequena\n• Máximo 10 cartelas por sessão\n• Não aumente a bet após sequência negativa\n• Stop loss: 20% da banca\n• Aproveite os bônus de múltiplas cartelas",
+        "💎 Estilo Premium Bingo:\n• Controle o número de cartelas por rodada\n• Gestão disciplinada sem impulsividade\n• Sessão curta com meta definida\n• Stop win: dobrou = encerra",
+    ],
+    "darts": [
+        "💎 Estilo Premium Darts:\n• Escolha sempre a mesma região alvo por sessão\n• Bet fixa sem progressão\n• Máximo 10 arremessos por sessão\n• Stop loss: 5 erros seguidos = pausa\n• Foco total na pontaria — não jogue apressado",
+        "💎 Estilo Premium Darts:\n• Bet pequena e constante\n• Disciplina na escolha do alvo\n• Sessão curta com meta definida\n• Stop win: dobrou = encerra",
     ],
 }
 
 CRASH_PROVIDERS = {"Spribe", "Original", "Betby", "Easybet", "1Bet", "Pateplay"}
+
 
 # =========================================================
 # DB
@@ -1021,29 +1367,14 @@ def init_db():
         """, (DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASSWORD, now_br_str()))
 
     plans = [
-        (
-            "Free",
-            "R$ 0,00",
-            "Acesso a alguns sinais do dia|Estratégias padrão (simplificadas)|Acesso ao grupo|Sem prioridade nas entradas|Suporte exclusivo para VIP e Premium"
-        ),
-        (
-            "VIP",
-            "R$ 97,00",
-            "Acesso completo aos sinais|Estratégias completas estilo premium|Prioridade nas entradas|Acesso ao grupo VIP|Método validado na prática"
-        ),
-        (
-            "Premium",
-            "R$ 297,00",
-            "Tudo do VIP|Acesso antecipado aos sinais|Estratégias agressivas exclusivas|Suporte prioritário|White label e personalização total"
-        ),
+        ("Free", "R$ 0,00", "Acesso a alguns sinais do dia|Estratégias padrão (simplificadas)|Acesso ao grupo|Sem prioridade nas entradas|Suporte exclusivo para VIP e Premium"),
+        ("VIP", "R$ 97,00", "Acesso completo aos sinais|Estratégias completas estilo premium|Prioridade nas entradas|Acesso ao grupo VIP|Método validado na prática"),
+        ("Premium", "R$ 297,00", "Tudo do VIP|Acesso antecipado aos sinais|Estratégias agressivas exclusivas|Suporte prioritário|White label e personalização total"),
     ]
     for name, price, features in plans:
         cur.execute("SELECT id FROM plans WHERE name = %s", (name,))
         if not cur.fetchone():
-            cur.execute("""
-                INSERT INTO plans (name, price, features, active)
-                VALUES (%s, %s, %s, 1)
-            """, (name, price, features))
+            cur.execute("INSERT INTO plans (name, price, features, active) VALUES (%s, %s, %s, 1)", (name, price, features))
 
     conn.commit()
     conn.close()
@@ -1074,45 +1405,43 @@ def infer_game_type(provider: str, name: str):
         return "penalty"
     if "tower" in n:
         return "tower"
-    # grid slots Hacksaw (cluster pay / cascata)
     if n in {"blocks", "colors", "cubes", "cubes 2", "lines"}:
         return "grid_slot"
-    if "roulette" in n:
+    if "roulette" in n or "mini roulette" in n:
         return "roulette"
+    if "bingo" in n:
+        return "bingo"
+    if "blackjack" in n:
+        return "blackjack"
+    if "baccarat" in n:
+        return "baccarat"
+    if "darts" in n:
+        return "darts"
+    if "racing" in n or "horse racing" in n or "greyhound" in n or "front runner" in n or "day at the races" in n or "force 1" in n or "raceday" in n:
+        return "racing"
     if "keno" in n:
         return "keno"
     if "chicken uncrossable" in n:
         return "runner"
-    # mines
-    if "piggy mines" in n or "football mines" in n or "mines or" in n or n == "mines":
+    if "piggy mines" in n or "football mines" in n or "mines or" in n:
         return "mines"
-    # wheel / roleta
-    if "aquarius fortune wheel" in n or "wheel of wealth" in n or "lucky wheel" in n or "roulette" in n or "caribbean saga" in n:
+    if "aquarius fortune wheel" in n or "wheel of wealth" in n or "blitz super wheel" in n or "caribbean saga" in n or "roulette vvip" in n:
         return "wheel"
-    # crash
-    if "cash or crash" in n:
+    if "cash or crash" in n or "big bass crash" in n:
         return "crash"
-    # hilo
     if "meow hilo" in n or "odds hi lo" in n or "thai hilo" in n or "7 up" in n:
         return "hilo"
-    # plinko
     if "aztec plinko" in n or "plinko mega win" in n or "plinko ufo" in n or "plinkos" in n:
         return "plinko"
-    # dice / sicbo
-    if "bau cua" in n or "fan tan" in n or "tai xiu" in n or "thunder dice" in n or "virtual sicbo" in n or "rngwar" in n:
+    if "bau cua" in n or "fan tan" in n or "tai xiu" in n or "thunder dice" in n or "virtual sicbo" in n or "rngwar" in n or "money stacks dice" in n or "big bass dice" in n or "gates of olympus dice" in n or "joker's jewels dice" in n:
         return "dice"
-    # keno
-    if "kenosoccer" in n or "kenowar" in n or "happy10" in n or "number game" in n or "thai lotto" in n:
+    if "kenosoccer" in n or "kenowar" in n or "happy10" in n or "number game" in n or "thai lotto" in n or "keno 80" in n:
         return "keno"
-    # limbo
     if "limbo football" in n:
         return "limbo"
-    # crash / rocket
-    if "rocket reels" in n:
+    if "rocket reels" in n or "speed crash" in n or "hotline" in n or "doctor rocket" in n:
         return "crash"
-    if "speed crash" in n:
-        return "crash"
-    if "dice" in n or "keno" in n or "goal" in n or "balloon" in n or "crash" in n or "rocket" in n or "limbo" in n:
+    if "dice" in n or "crash" in n or "rocket" in n:
         return "crash"
     if p in {x.lower() for x in CRASH_PROVIDERS}:
         return "crash"
@@ -1126,14 +1455,7 @@ def add_game_if_missing(name: str, provider: str, rtp: str = "", emoji: str = "�
         INSERT INTO games (name, provider, rtp, emoji, game_type, created_at)
         VALUES (%s, %s, %s, %s, %s, %s)
         ON CONFLICT(name, provider) DO NOTHING
-    """, (
-        name.strip(),
-        provider.strip(),
-        (rtp or "").strip(),
-        (emoji or "🎰").strip(),
-        infer_game_type(provider, name),
-        now_br_str()
-    ))
+    """, (name.strip(), provider.strip(), (rtp or "").strip(), (emoji or "🎰").strip(), infer_game_type(provider, name), now_br_str()))
     conn.commit()
     cur.close()
     conn.close()
@@ -1143,6 +1465,7 @@ def seed_initial_games():
     for provider, items in PROVIDER_GAMES.items():
         for name, rtp, emoji in items:
             add_game_if_missing(name, provider, rtp, emoji)
+
 
 # =========================================================
 # AUTH
@@ -1199,6 +1522,11 @@ def choose_strategy_key(game_type: str, position: int):
         "keno":      "keno",
         "roulette":  "roulette",
         "runner":    "runner",
+        "baccarat":  "baccarat",
+        "blackjack": "blackjack",
+        "racing":    "racing",
+        "bingo":     "bingo",
+        "darts":     "darts",
     }
     if game_type in mapping:
         return mapping[game_type]
@@ -1210,12 +1538,7 @@ def build_message_for_game(plan_date: str, position: int, game_row):
     intro = choose_variant(INTRO_VARIANTS, plan_date, game_row["id"], "intro")
     closing = choose_variant(CLOSING_VARIANTS, plan_date, game_row["id"], "closing")
     strategy_key = choose_strategy_key(game_row["game_type"], position)
-    strategy_text = choose_variant(
-        STRATEGY_VARIANTS[strategy_key],
-        plan_date,
-        game_row["id"],
-        "strategy"
-    )
+    strategy_text = choose_variant(STRATEGY_VARIANTS[strategy_key], plan_date, game_row["id"], "strategy")
 
     provider_line = f"🏢 Provedora: {game_row['provider']}\n" if game_row["provider"] else ""
     rtp_line = f"📊 RTP: {game_row['rtp']}\n" if game_row["rtp"] else "📊 RTP: Verificado ✅\n"
@@ -1229,15 +1552,11 @@ def build_message_for_game(plan_date: str, position: int, game_row):
         f"{closing}"
     )
 
+
 def acquire_scheduler_leadership() -> bool:
-    """
-    Garante que apenas uma instância/processo fique responsável pelos envios.
-    Funciona mesmo se houver mais de um worker/import da aplicação.
-    """
     now_dt = now_br()
     lease_until = (now_dt + timedelta(seconds=SCHEDULER_LEASE_SECONDS)).strftime("%Y-%m-%d %H:%M:%S")
     now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
-
     conn = db()
     cur = conn.cursor()
     try:
@@ -1245,17 +1564,9 @@ def acquire_scheduler_leadership() -> bool:
         owner_row = cur.fetchone()
         cur.execute("SELECT value FROM settings WHERE key = 'scheduler_lease_until'")
         lease_row = cur.fetchone()
-
         current_owner = owner_row["value"] if owner_row else ""
         current_lease = lease_row["value"] if lease_row else ""
-
-        can_take = (
-            not current_owner
-            or not current_lease
-            or current_lease <= now_str
-            or current_owner == SCHEDULER_INSTANCE_ID
-        )
-
+        can_take = (not current_owner or not current_lease or current_lease <= now_str or current_owner == SCHEDULER_INSTANCE_ID)
         if can_take:
             cur.execute("UPDATE settings SET value = %s WHERE key = 'scheduler_owner'", (SCHEDULER_INSTANCE_ID,))
             cur.execute("UPDATE settings SET value = %s WHERE key = 'scheduler_lease_until'", (lease_until,))
@@ -1263,7 +1574,6 @@ def acquire_scheduler_leadership() -> bool:
             cur.close()
             conn.close()
             return True
-
         conn.rollback()
         cur.close()
         conn.close()
@@ -1271,15 +1581,11 @@ def acquire_scheduler_leadership() -> bool:
     except Exception:
         try:
             conn.rollback()
-        except Exception:
-            pass
-        try:
             cur.close()
             conn.close()
         except Exception:
             pass
         return False
-
 
 # =========================================================
 # PLANEJAMENTO
@@ -1287,8 +1593,7 @@ def acquire_scheduler_leadership() -> bool:
 def get_interval_minutes():
     raw = get_setting("send_interval_minutes", str(SEND_INTERVAL_MINUTES)).strip()
     try:
-        value = int(raw)
-        return max(1, value)
+        return max(1, int(raw))
     except Exception:
         return SEND_INTERVAL_MINUTES
 
@@ -1296,8 +1601,7 @@ def get_interval_minutes():
 def get_max_late_minutes():
     raw = get_setting("max_late_minutes", str(MAX_LATE_MINUTES)).strip()
     try:
-        value = int(raw)
-        return max(1, value)
+        return max(1, int(raw))
     except Exception:
         return MAX_LATE_MINUTES
 
@@ -1305,89 +1609,68 @@ def get_max_late_minutes():
 def get_day_window(day_str: str):
     start_time = get_setting("auto_start_time", AUTO_START_TIME)
     end_time = get_setting("auto_end_time", AUTO_END_TIME)
-
     day_obj = datetime.strptime(day_str, "%Y-%m-%d").date()
     sh, sm = parse_hhmm(start_time)
     eh, em = parse_hhmm(end_time)
-
     start_dt = datetime(day_obj.year, day_obj.month, day_obj.day, sh, sm, 0, tzinfo=APP_TZ)
     end_dt = datetime(day_obj.year, day_obj.month, day_obj.day, eh, em, 0, tzinfo=APP_TZ)
-
     if end_dt <= start_dt:
         end_dt = start_dt + timedelta(hours=24)
-
     return start_dt, end_dt
 
 
 def build_send_slots_for_day(day_str: str):
     start_dt, end_dt = get_day_window(day_str)
-    max_interval = get_interval_minutes()  # maximo configurado (padrao 3 min)
-    min_interval = 1                        # minimo sempre 1 min
-
-    # Semente deterministica por dia — mesmos horarios se regenerar no mesmo dia
+    max_interval = get_interval_minutes()
+    min_interval = 1
     rng_slots = random.Random(stable_seed_for_day(day_str + "_slots"))
-
     slots = []
     current = start_dt
-
     while current <= end_dt:
         slots.append(current)
-        # Intervalo aleatorio entre min e max minutos + segundos aleatorios
         minutes = rng_slots.randint(min_interval, max_interval)
         seconds = rng_slots.randint(0, 59)
         current += timedelta(minutes=minutes, seconds=seconds)
-
     return slots
 
 
 def ensure_daily_plan(day_str: str):
     conn = db()
     cur = conn.cursor()
-
     cur.execute("SELECT COUNT(*) AS total FROM daily_plan WHERE plan_date = %s", (day_str,))
     existing = cur.fetchone()["total"]
-
     if existing > 0:
         cur.close()
         conn.close()
         return
-
     cur.execute("SELECT * FROM games ORDER BY provider, name")
     games = cur.fetchall()
-
     if not games:
         cur.close()
         conn.close()
         return
-
     slots = build_send_slots_for_day(day_str)
     if not slots:
         cur.close()
         conn.close()
         return
-
     games_list = list(games)
     rng = random.Random(stable_seed_for_day(day_str))
     rng.shuffle(games_list)
-
     needed = len(slots)
     selected_games = []
     while len(selected_games) < needed:
         local = list(games_list)
         rng.shuffle(local)
         selected_games.extend(local)
-
     selected_games = selected_games[:needed]
-
     for position, game_row in enumerate(selected_games, start=1):
         send_at = slots[position - 1].strftime("%Y-%m-%d %H:%M:%S")
         cur.execute("""
-            INSERT INTO daily_plan
-            (plan_date, position, game_id, send_at, sent, sent_at, telegram_status, telegram_response, locked_at)
+            INSERT INTO daily_plan (plan_date, position, game_id, send_at, sent, sent_at, telegram_status, telegram_response, locked_at)
             VALUES (%s, %s, %s, %s, 0, '', '', '', '')
             ON CONFLICT(plan_date, position) DO NOTHING
         """, (day_str, position, game_row["id"], send_at))
-
     conn.commit()
     cur.close()
     conn.close()
@@ -1396,12 +1679,9 @@ def ensure_daily_plan(day_str: str):
 def get_due_unsent_items(limit=1):
     day_str = today_str()
     ensure_daily_plan(day_str)
-
     now_dt = now_br()
     cutoff_dt = now_dt - timedelta(minutes=get_max_late_minutes())
-    # Itens travados há mais que LOCK_TIMEOUT_SECONDS são considerados mortos (processo travou)
     lock_cutoff = (now_dt - timedelta(seconds=LOCK_TIMEOUT_SECONDS)).strftime("%Y-%m-%d %H:%M:%S")
-
     conn = db()
     cur = conn.cursor()
     cur.execute("""
@@ -1415,13 +1695,7 @@ def get_due_unsent_items(limit=1):
           AND (dp.locked_at = '' OR dp.locked_at <= %s)
         ORDER BY dp.position ASC
         LIMIT %s
-    """, (
-        day_str,
-        now_dt.strftime("%Y-%m-%d %H:%M:%S"),
-        cutoff_dt.strftime("%Y-%m-%d %H:%M:%S"),
-        lock_cutoff,
-        limit
-    ))
+    """, (day_str, now_dt.strftime("%Y-%m-%d %H:%M:%S"), cutoff_dt.strftime("%Y-%m-%d %H:%M:%S"), lock_cutoff, limit))
     rows = cur.fetchall()
     cur.close()
     conn.close()
@@ -1429,24 +1703,15 @@ def get_due_unsent_items(limit=1):
 
 
 def try_lock_item(item_id: int) -> bool:
-    """
-    Tenta travar o item atomicamente.
-    NÃO marca como enviado aqui.
-    Só trava o item para impedir duplicidade até o envio terminar.
-    """
     now_dt = now_br()
     lock_cutoff = (now_dt - timedelta(seconds=LOCK_TIMEOUT_SECONDS)).strftime("%Y-%m-%d %H:%M:%S")
     now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
-
     conn = db()
     cur = conn.cursor()
     try:
         cur.execute("""
-            UPDATE daily_plan
-            SET locked_at = %s
-            WHERE id = %s
-              AND sent = 0
-              AND (locked_at = '' OR locked_at <= %s)
+            UPDATE daily_plan SET locked_at = %s
+            WHERE id = %s AND sent = 0 AND (locked_at = '' OR locked_at <= %s)
         """, (now_str, item_id, lock_cutoff))
         conn.commit()
         rowcount = cur.rowcount
@@ -1468,36 +1733,13 @@ def finalize_send_log(plan_row, ok, response):
     conn = db()
     cur = conn.cursor()
     cur.execute("""
-        UPDATE daily_plan
-        SET sent = %s,
-            sent_at = %s,
-            telegram_status = %s,
-            telegram_response = %s,
-            locked_at = ''
+        UPDATE daily_plan SET sent = %s, sent_at = %s, telegram_status = %s, telegram_response = %s, locked_at = ''
         WHERE id = %s
-    """, (
-        1 if ok else 0,
-        sent_now if ok else '',
-        "ok" if ok else "erro",
-        (response or "")[:1000],
-        plan_row["id"]
-    ))
-
+    """, (1 if ok else 0, sent_now if ok else '', "ok" if ok else "erro", (response or "")[:1000], plan_row["id"]))
     cur.execute("""
-        INSERT INTO sent_log
-        (send_date, send_time, game_id, game_name, provider, sent_at, telegram_status, telegram_response)
+        INSERT INTO sent_log (send_date, send_time, game_id, game_name, provider, sent_at, telegram_status, telegram_response)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    """, (
-        today_str(),
-        datetime.strptime(plan_row["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M"),
-        plan_row["game_id"],
-        plan_row["game_name"],
-        plan_row["provider"],
-        sent_now,
-        "ok" if ok else "erro",
-        (response or "")[:1000]
-    ))
-
+    """, (today_str(), datetime.strptime(plan_row["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M"), plan_row["game_id"], plan_row["game_name"], plan_row["provider"], sent_now, "ok" if ok else "erro", (response or "")[:1000]))
     conn.commit()
     cur.close()
     conn.close()
@@ -1508,38 +1750,16 @@ def finalize_send_log(plan_row, ok, response):
 def telegram_send(text, image_url=""):
     if not TOKEN or not CHAT_ID:
         return False, "TOKEN ou CHAT_ID não configurados."
-
     footer_link = get_setting("footer_link", DEFAULT_FOOTER_LINK)
     footer_text = get_setting("footer_text", DEFAULT_FOOTER_TEXT)
-
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {
-                    "text": footer_text,
-                    "url": footer_link
-                }
-            ]
-        ]
-    }
-
+    keyboard = {"inline_keyboard": [[{"text": footer_text, "url": footer_link}]]}
     try:
         if image_url.strip():
             url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
-            data = {
-                "chat_id": CHAT_ID,
-                "photo": image_url.strip(),
-                "caption": text[:1024],
-                "reply_markup": json.dumps(keyboard)
-            }
+            data = {"chat_id": CHAT_ID, "photo": image_url.strip(), "caption": text[:1024], "reply_markup": json.dumps(keyboard)}
         else:
             url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-            data = {
-                "chat_id": CHAT_ID,
-                "text": text,
-                "reply_markup": json.dumps(keyboard)
-            }
-
+            data = {"chat_id": CHAT_ID, "text": text, "reply_markup": json.dumps(keyboard)}
         resp = requests.post(url, data=data, timeout=30)
         ok = resp.status_code == 200
         return ok, f"{resp.status_code} - {resp.text[:600]}"
@@ -1552,43 +1772,29 @@ def telegram_send(text, image_url=""):
 def scheduler_loop():
     while True:
         try:
-            # Só a instância líder pode montar agenda e enviar sinais
             if not acquire_scheduler_leadership():
                 time.sleep(SCHEDULER_SLEEP_SECONDS)
                 continue
-
             ensure_daily_plan(today_str())
             tomorrow = (today_date() + timedelta(days=1)).strftime("%Y-%m-%d")
             ensure_daily_plan(tomorrow)
-
             due_items = get_due_unsent_items(limit=1)
             hero_image_url = get_setting("hero_image_url", "").strip()
-
             for item in due_items:
                 locked = try_lock_item(item["id"])
                 if not locked:
                     continue
-
                 msg = build_message_for_game(
                     plan_date=item["plan_date"],
                     position=item["position"],
-                    game_row={
-                        "id": item["game_id"],
-                        "name": item["game_name"],
-                        "provider": item["provider"],
-                        "rtp": item["rtp"],
-                        "emoji": item["emoji"],
-                        "game_type": item["game_type"],
-                    }
+                    game_row={"id": item["game_id"], "name": item["game_name"], "provider": item["provider"], "rtp": item["rtp"], "emoji": item["emoji"], "game_type": item["game_type"]}
                 )
-
                 ok, response = telegram_send(msg, hero_image_url)
                 finalize_send_log(item, ok, response)
-
             time.sleep(SCHEDULER_SLEEP_SECONDS)
-
         except Exception:
             time.sleep(SCHEDULER_SLEEP_SECONDS)
+
 
 # =========================================================
 # UI
@@ -1628,189 +1834,50 @@ body{
     top:0;
     z-index:9;
 }
-.brand{
-    font-size:22px;
-    font-weight:700;
-    color:var(--secondary);
-}
-.top-actions a{
-    color:#fff;
-    text-decoration:none;
-    margin-left:12px;
-    padding:10px 14px;
-    border-radius:12px;
-    background:rgba(255,255,255,.06);
-    display:inline-block;
-}
-.container{
-    max-width:1400px;
-    margin:0 auto;
-    padding:24px;
-}
-.grid{
-    display:grid;
-    gap:18px;
-}
-.grid-2{
-    grid-template-columns:1.1fr .9fr;
-}
-.grid-3{
-    grid-template-columns:repeat(3, 1fr);
-}
-.card{
-    background:var(--dark2);
-    border:1px solid rgba(212,175,55,.18);
-    border-radius:24px;
-    padding:20px;
-    box-shadow:0 10px 30px rgba(0,0,0,.25);
-}
-.card h2, .card h3{
-    margin:0 0 14px 0;
-    color:var(--secondary);
-}
-.kpi{
-    font-size:30px;
-    font-weight:700;
-    margin-top:10px;
-}
-.sub{
-    color:#d7d7d7;
-    font-size:14px;
-}
-form input, form select, form textarea{
-    width:100%;
-    background:#0e0e14;
-    color:#fff;
-    border:1px solid rgba(212,175,55,.18);
-    border-radius:14px;
-    padding:12px 14px;
-    margin:8px 0 14px 0;
-    outline:none;
-}
-form textarea{
-    min-height:140px;
-    resize:vertical;
-}
-button, .btn{
-    background:linear-gradient(180deg, var(--secondary) 0%, #b58d10 100%);
-    color:#111;
-    border:none;
-    border-radius:14px;
-    padding:12px 16px;
-    font-weight:700;
-    cursor:pointer;
-    text-decoration:none;
-    display:inline-block;
-}
-.table-wrap{
-    overflow:auto;
-}
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-th, td{
-    padding:12px;
-    border-bottom:1px solid rgba(255,255,255,.08);
-    text-align:left;
-    vertical-align:top;
-}
-th{
-    color:var(--secondary);
-    font-size:14px;
-}
-.badge{
-    display:inline-block;
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:700;
-}
-.badge-success{ background:rgba(57,217,138,.12); color:var(--success);}
-.badge-gold{ background:rgba(212,175,55,.12); color:var(--secondary);}
-.flash{
-    margin-bottom:16px;
-    padding:14px 16px;
-    border-radius:14px;
-    background:rgba(255,255,255,.07);
-}
-.preview{
-    white-space:pre-wrap;
-    background:#0e0e14;
-    padding:16px;
-    border-radius:18px;
-    border:1px solid rgba(212,175,55,.14);
-}
-.muted{
-    color:#bdbdbd;
-    font-size:13px;
-}
-.small{
-    font-size:12px;
-    color:#cfcfcf;
-}
-@media (max-width: 980px){
-    .grid-2, .grid-3{
-        grid-template-columns:1fr;
-    }
-}
+.brand{font-size:22px;font-weight:700;color:var(--secondary);}
+.top-actions a{color:#fff;text-decoration:none;margin-left:12px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.06);display:inline-block;}
+.container{max-width:1400px;margin:0 auto;padding:24px;}
+.grid{display:grid;gap:18px;}
+.grid-2{grid-template-columns:1.1fr .9fr;}
+.grid-3{grid-template-columns:repeat(3, 1fr);}
+.card{background:var(--dark2);border:1px solid rgba(212,175,55,.18);border-radius:24px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+.card h2, .card h3{margin:0 0 14px 0;color:var(--secondary);}
+.kpi{font-size:30px;font-weight:700;margin-top:10px;}
+.sub{color:#d7d7d7;font-size:14px;}
+form input, form select, form textarea{width:100%;background:#0e0e14;color:#fff;border:1px solid rgba(212,175,55,.18);border-radius:14px;padding:12px 14px;margin:8px 0 14px 0;outline:none;}
+form textarea{min-height:140px;resize:vertical;}
+button, .btn{background:linear-gradient(180deg, var(--secondary) 0%, #b58d10 100%);color:#111;border:none;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;}
+.table-wrap{overflow:auto;}
+table{width:100%;border-collapse:collapse;}
+th, td{padding:12px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top;}
+th{color:var(--secondary);font-size:14px;}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;}
+.badge-success{background:rgba(57,217,138,.12);color:var(--success);}
+.badge-gold{background:rgba(212,175,55,.12);color:var(--secondary);}
+.flash{margin-bottom:16px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.07);}
+.preview{white-space:pre-wrap;background:#0e0e14;padding:16px;border-radius:18px;border:1px solid rgba(212,175,55,.14);}
+.muted{color:#bdbdbd;font-size:13px;}
+.small{font-size:12px;color:#cfcfcf;}
+@media (max-width: 980px){.grid-2, .grid-3{grid-template-columns:1fr;}}
 </style>
 <script>
-// Auto-refresh do painel a cada 20 segundos via AJAX (só na página do painel)
 (function(){
-    function isDashboard(){
-        return window.location.pathname === '/' || window.location.pathname === '';
-    }
+    function isDashboard(){return window.location.pathname === '/' || window.location.pathname === '';}
     if(!isDashboard()) return;
-
     function updateDashboard(){
         fetch('/api/dashboard-stats')
-            .then(function(r){ return r.json(); })
+            .then(function(r){return r.json();})
             .then(function(d){
-                // KPIs
-                var els = {
-                    'kpi-jogos': d.total_games,
-                    'kpi-providers': d.total_providers,
-                    'kpi-sent': d.sent_today,
-                    'kpi-pending': d.pending_today,
-                    'kpi-hora': d.hora_atual,
-                    'kpi-first': d.first_time,
-                    'kpi-last': d.last_time,
-                    'kpi-last-game': d.last_game,
-                    'kpi-last-time': d.last_send_time,
-                    'kpi-last-status': d.last_status,
-                };
-                Object.keys(els).forEach(function(id){
-                    var el = document.getElementById(id);
-                    if(el && els[id] !== undefined) el.textContent = els[id];
-                });
-
-                // Preview próxima mensagem
-                var prev = document.getElementById('preview-next');
-                if(prev && d.preview) prev.textContent = d.preview;
-
-                // Tabela de últimos envios
-                var tbody = document.getElementById('tbody-logs');
-                if(tbody && d.logs){
-                    tbody.innerHTML = d.logs.map(function(row){
-                        var badge = row.status === 'ok'
-                            ? '<span class="badge badge-success">ok</span>'
-                            : '<span class="badge badge-gold">' + (row.status || '-') + '</span>';
-                        return '<tr><td>'+row.date+'</td><td>'+row.time+'</td><td>'+row.game+'</td><td>'+row.provider+'</td><td>'+badge+'</td></tr>';
-                    }).join('');
-                }
-
-                // Indicador visual discreto
-                var ind = document.getElementById('refresh-indicator');
-                if(ind){
-                    ind.style.opacity = '1';
-                    setTimeout(function(){ ind.style.opacity = '0'; }, 800);
-                }
-            })
-            .catch(function(){});
+                var els={'kpi-jogos':d.total_games,'kpi-providers':d.total_providers,'kpi-sent':d.sent_today,'kpi-pending':d.pending_today,'kpi-hora':d.hora_atual,'kpi-first':d.first_time,'kpi-last':d.last_time,'kpi-last-game':d.last_game,'kpi-last-time':d.last_send_time,'kpi-last-status':d.last_status};
+                Object.keys(els).forEach(function(id){var el=document.getElementById(id);if(el&&els[id]!==undefined)el.textContent=els[id];});
+                var prev=document.getElementById('preview-next');
+                if(prev&&d.preview)prev.textContent=d.preview;
+                var tbody=document.getElementById('tbody-logs');
+                if(tbody&&d.logs){tbody.innerHTML=d.logs.map(function(row){var badge=row.status==='ok'?'<span class="badge badge-success">ok</span>':'<span class="badge badge-gold">'+(row.status||'-')+'</span>';return '<tr><td>'+row.date+'</td><td>'+row.time+'</td><td>'+row.game+'</td><td>'+row.provider+'</td><td>'+badge+'</td></tr>';}).join('');}
+                var ind=document.getElementById('refresh-indicator');
+                if(ind){ind.style.opacity='1';setTimeout(function(){ind.style.opacity='0';},800);}
+            }).catch(function(){});
     }
-
-    // Primeira atualização após 20s, depois repete
     setInterval(updateDashboard, 20000);
 })();
 </script>
@@ -1833,11 +1900,7 @@ th{
 </div>
 <div class="container">
     {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for m in messages %}
-                <div class="flash">{{ m }}</div>
-            {% endfor %}
-        {% endif %}
+        {% if messages %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endif %}
     {% endwith %}
     {{ content|safe }}
 </div>
@@ -1848,9 +1911,7 @@ th{
 
 def render_page(title, content):
     return render_template_string(
-        BASE_HTML,
-        title=title,
-        content=content,
+        BASE_HTML, title=title, content=content,
         brand_name=get_setting("brand_name", "Rainha Games"),
         theme_primary=get_setting("theme_primary", "#B3001B"),
         theme_secondary=get_setting("theme_secondary", "#D4AF37"),
@@ -1866,28 +1927,20 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
-
         conn = db()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT * FROM users
-            WHERE username = %s AND password = %s AND is_active = 1
-            LIMIT 1
-        """, (username, password))
+        cur.execute("SELECT * FROM users WHERE username = %s AND password = %s AND is_active = 1 LIMIT 1", (username, password))
         user = cur.fetchone()
         cur.close()
         conn.close()
-
         if user:
             session["user_id"] = user["id"]
             session["username"] = user["username"]
             session["role"] = user["role"]
             session["plan"] = user["plan"]
             return redirect(url_for("dashboard"))
-
         flash("Login inválido.")
         return redirect(url_for("login"))
-
     html = """
     <div class="grid">
         <div class="card" style="max-width:520px;margin:40px auto;">
@@ -1899,9 +1952,6 @@ def login():
                 <input name="password" type="password" placeholder="Digite sua senha" required>
                 <button type="submit">Entrar</button>
             </form>
-            <div class="muted" style="margin-top:12px;">
-                Login padrão do admin: use as variáveis ADMIN_USER e ADMIN_PASSWORD.
-            </div>
         </div>
     </div>
     """
@@ -1918,7 +1968,6 @@ def logout():
 @require_login
 def dashboard():
     ensure_daily_plan(today_str())
-
     conn = db()
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) AS total FROM games")
@@ -1937,11 +1986,9 @@ def dashboard():
     last_log = cur.fetchone()
     cur.execute("""
         SELECT dp.*, g.name AS game_name, g.provider, g.rtp, g.emoji, g.game_type
-        FROM daily_plan dp
-        JOIN games g ON g.id = dp.game_id
+        FROM daily_plan dp JOIN games g ON g.id = dp.game_id
         WHERE dp.plan_date = %s AND dp.sent = 0
-        ORDER BY dp.position ASC
-        LIMIT 1
+        ORDER BY dp.position ASC LIMIT 1
     """, (today_str(),))
     next_item = cur.fetchone()
     cur.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 12")
@@ -1951,31 +1998,12 @@ def dashboard():
 
     preview = "Nenhuma prévia disponível."
     if next_item:
-        preview = build_message_for_game(
-            plan_date=next_item["plan_date"],
-            position=next_item["position"],
-            game_row={
-                "id": next_item["game_id"],
-                "name": next_item["game_name"],
-                "provider": next_item["provider"],
-                "rtp": next_item["rtp"],
-                "emoji": next_item["emoji"],
-                "game_type": next_item["game_type"],
-            }
-        )
+        preview = build_message_for_game(plan_date=next_item["plan_date"], position=next_item["position"], game_row={"id": next_item["game_id"], "name": next_item["game_name"], "provider": next_item["provider"], "rtp": next_item["rtp"], "emoji": next_item["emoji"], "game_type": next_item["game_type"]})
 
     rows_html = ""
     for row in recent_logs:
         status_badge = "badge-success" if row["telegram_status"] == "ok" else "badge-gold"
-        rows_html += f"""
-        <tr>
-            <td>{row["send_date"]}</td>
-            <td>{row["send_time"]}</td>
-            <td>{row["game_name"] or "-"}</td>
-            <td>{row["provider"] or "-"}</td>
-            <td><span class="badge {status_badge}">{row["telegram_status"] or "-"}</span></td>
-        </tr>
-        """
+        rows_html += f'<tr><td>{row["send_date"]}</td><td>{row["send_time"]}</td><td>{row["game_name"] or "-"}</td><td>{row["provider"] or "-"}</td><td><span class="badge {status_badge}">{row["telegram_status"] or "-"}</span></td></tr>'
 
     first_time_text = datetime.strptime(first_time["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M") if first_time else "-"
     last_time_text = datetime.strptime(last_time["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M") if last_time else "-"
@@ -1985,89 +2013,54 @@ def dashboard():
         <span id="refresh-indicator" style="font-size:12px;color:#39d98a;opacity:0;transition:opacity .4s;">● atualizado</span>
         <span class="muted" style="font-size:12px;">⟳ Painel atualiza automaticamente a cada 20s</span>
     </div>
-
     <div class="grid grid-3">
-        <div class="card">
-            <div class="sub">Jogos no catálogo</div>
-            <div class="kpi" id="kpi-jogos">{total_games}</div>
-        </div>
-        <div class="card">
-            <div class="sub">Provedoras</div>
-            <div class="kpi" id="kpi-providers">{total_providers}</div>
-        </div>
-        <div class="card">
-            <div class="sub">Envios feitos hoje</div>
-            <div class="kpi" id="kpi-sent">{sent_today}</div>
-        </div>
+        <div class="card"><div class="sub">Jogos no catálogo</div><div class="kpi" id="kpi-jogos">{total_games}</div></div>
+        <div class="card"><div class="sub">Provedoras</div><div class="kpi" id="kpi-providers">{total_providers}</div></div>
+        <div class="card"><div class="sub">Envios feitos hoje</div><div class="kpi" id="kpi-sent">{sent_today}</div></div>
     </div>
-
     <div class="grid grid-2" style="margin-top:18px;">
         <div class="card">
             <h2>Próxima mensagem automática</h2>
             <div class="preview" id="preview-next">{preview}</div>
-            <div class="muted" style="margin-top:12px;">
-                O botão "{get_setting("footer_text", DEFAULT_FOOTER_TEXT)}" é enviado automaticamente em todas as mensagens.
-            </div>
+            <div class="muted" style="margin-top:12px;">O botão "{get_setting("footer_text", DEFAULT_FOOTER_TEXT)}" é enviado automaticamente em todas as mensagens.</div>
         </div>
-
         <div class="grid">
             <div class="card">
                 <h3>Status do sistema</h3>
                 <div class="sub">Horário atual Brasil</div>
                 <div class="kpi" id="kpi-hora">{now_br().strftime("%H:%M:%S")}</div>
-
                 <div class="sub" style="margin-top:12px;">Janela automática</div>
                 <div class="preview">{get_setting("auto_start_time", AUTO_START_TIME)} até {get_setting("auto_end_time", AUTO_END_TIME)}</div>
-
                 <div class="sub" style="margin-top:12px;">Intervalo entre envios</div>
                 <div>{get_interval_minutes()} minutos</div>
-
-                <div class="sub" style="margin-top:12px;">Tolerância máxima de atraso</div>
-                <div>{get_max_late_minutes()} minutos</div>
-
                 <div class="sub" style="margin-top:12px;">Primeiro horário de hoje</div>
                 <div id="kpi-first">{first_time_text}</div>
-
                 <div class="sub" style="margin-top:12px;">Último horário de hoje</div>
                 <div id="kpi-last">{last_time_text}</div>
-
                 <div class="sub" style="margin-top:12px;">Pendentes hoje</div>
                 <div id="kpi-pending">{pending_today}</div>
             </div>
-
             <div class="card">
                 <h3>Último envio</h3>
                 <div class="sub">Jogo</div>
                 <div id="kpi-last-game">{last_log["game_name"] if last_log else "Ainda não houve envio"}</div>
-
                 <div class="sub" style="margin-top:10px;">Hora</div>
                 <div id="kpi-last-time">{last_log["send_time"] if last_log else "-"}</div>
-
                 <div class="sub" style="margin-top:10px;">Status</div>
                 <div id="kpi-last-status">{last_log["telegram_status"] if last_log else "-"}</div>
             </div>
         </div>
     </div>
-
     <div class="card" style="margin-top:18px;">
         <h3>Ações rápidas</h3>
         <a class="btn" href="/admin/test-send">Enviar teste agora</a>
         <a class="btn" href="/admin/rebuild-plan" style="margin-left:10px;">Regerar agenda de hoje</a>
     </div>
-
     <div class="card" style="margin-top:18px;">
         <h3>Últimos envios</h3>
         <div class="table-wrap">
             <table>
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Hora</th>
-                        <th>Jogo</th>
-                        <th>Provedora</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Data</th><th>Hora</th><th>Jogo</th><th>Provedora</th><th>Status</th></tr></thead>
                 <tbody id="tbody-logs">{rows_html}</tbody>
             </table>
         </div>
@@ -2085,26 +2078,11 @@ def sales_plans():
     rows = cur.fetchall()
     cur.close()
     conn.close()
-
     cards = ""
     for row in rows:
         features = "".join(f"<div>• {f}</div>" for f in row["features"].split("|"))
-        cards += f"""
-        <div class="card">
-            <h3>{row['name']}</h3>
-            <div class="kpi" style="font-size:26px;">{row['price']}</div>
-            <div class="preview" style="margin-top:12px;">{features}</div>
-        </div>
-        """
-
-    html = f"""
-    <div class="card">
-        <h2>Plano de vendas</h2>
-    </div>
-    <div class="grid grid-3" style="margin-top:18px;">
-        {cards}
-    </div>
-    """
+        cards += f'<div class="card"><h3>{row["name"]}</h3><div class="kpi" style="font-size:26px;">{row["price"]}</div><div class="preview" style="margin-top:12px;">{features}</div></div>'
+    html = f'<div class="card"><h2>Plano de vendas</h2></div><div class="grid grid-3" style="margin-top:18px;">{cards}</div>'
     return render_page("Plano de vendas", html)
 
 
@@ -2117,15 +2095,11 @@ def admin_users():
         role = request.form.get("role", "client").strip()
         plan = request.form.get("plan", "Free").strip()
         brand_name = request.form.get("brand_name", "Rainha Games").strip()
-
         if username and password:
             conn = db()
             cur = conn.cursor()
             try:
-                cur.execute("""
-                    INSERT INTO users (username, password, role, plan, brand_name, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (username, password, role, plan, brand_name, now_br_str()))
+                cur.execute("INSERT INTO users (username, password, role, plan, brand_name, created_at) VALUES (%s, %s, %s, %s, %s, %s)", (username, password, role, plan, brand_name, now_br_str()))
                 conn.commit()
                 flash("Usuário criado com sucesso.")
             except Exception as e:
@@ -2134,74 +2108,33 @@ def admin_users():
             finally:
                 cur.close()
                 conn.close()
-
         return redirect(url_for("admin_users"))
-
     conn = db()
     cur = conn.cursor()
     cur.execute("SELECT * FROM users ORDER BY id DESC")
     users = cur.fetchall()
     cur.close()
     conn.close()
-
-    rows = ""
-    for u in users:
-        rows += f"""
-        <tr>
-            <td>{u['id']}</td>
-            <td>{u['username']}</td>
-            <td>{u['role']}</td>
-            <td>{u['plan']}</td>
-            <td>{"Ativo" if u['is_active'] else "Inativo"}</td>
-        </tr>
-        """
-
+    rows = "".join(f'<tr><td>{u["id"]}</td><td>{u["username"]}</td><td>{u["role"]}</td><td>{u["plan"]}</td><td>{"Ativo" if u["is_active"] else "Inativo"}</td></tr>' for u in users)
     html = f"""
     <div class="grid grid-2">
         <div class="card">
             <h2>Criar usuário</h2>
             <form method="post">
-                <label>Usuário</label>
-                <input name="username" required>
-
-                <label>Senha</label>
-                <input name="password" required>
-
+                <label>Usuário</label><input name="username" required>
+                <label>Senha</label><input name="password" required>
                 <label>Tipo</label>
-                <select name="role">
-                    <option value="client">Cliente</option>
-                    <option value="admin">Admin</option>
-                </select>
-
+                <select name="role"><option value="client">Cliente</option><option value="admin">Admin</option></select>
                 <label>Plano</label>
-                <select name="plan">
-                    <option value="Free">Free</option>
-                    <option value="VIP">VIP</option>
-                    <option value="Premium">Premium</option>
-                </select>
-
-                <label>Marca</label>
-                <input name="brand_name" value="Rainha Games">
-
+                <select name="plan"><option value="Free">Free</option><option value="VIP">VIP</option><option value="Premium">Premium</option></select>
+                <label>Marca</label><input name="brand_name" value="Rainha Games">
                 <button type="submit">Criar usuário</button>
             </form>
         </div>
-
         <div class="card">
             <h2>Usuários cadastrados</h2>
             <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Usuário</th>
-                            <th>Tipo</th>
-                            <th>Plano</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>{rows}</tbody>
-                </table>
+                <table><thead><tr><th>ID</th><th>Usuário</th><th>Tipo</th><th>Plano</th><th>Status</th></tr></thead><tbody>{rows}</tbody></table>
             </div>
         </div>
     </div>
@@ -2214,7 +2147,6 @@ def admin_users():
 def admin_catalog():
     if request.method == "POST":
         mode = request.form.get("mode", "").strip()
-
         if mode == "single":
             provider = request.form.get("provider", "").strip()
             name = request.form.get("name", "").strip()
@@ -2226,131 +2158,67 @@ def admin_catalog():
             else:
                 flash("Preencha provedora e nome do jogo.")
             return redirect(url_for("admin_catalog"))
-
         if mode == "bulk":
             bulk_text = request.form.get("bulk_text", "").strip()
             added = 0
-
             for raw_line in bulk_text.splitlines():
                 line = raw_line.strip()
                 if not line:
                     continue
-
                 parts = [p.strip() for p in line.split("|")]
                 provider = parts[0] if len(parts) > 0 else ""
                 name = parts[1] if len(parts) > 1 else ""
                 rtp = parts[2] if len(parts) > 2 else ""
                 emoji = parts[3] if len(parts) > 3 else "🎰"
-
                 if provider and name:
                     add_game_if_missing(name, provider, rtp, emoji)
                     added += 1
-
             flash(f"Importação concluída. Linhas processadas: {added}")
             return redirect(url_for("admin_catalog"))
-
     conn = db()
     cur = conn.cursor()
-    cur.execute("""
-        SELECT provider, COUNT(*) AS total
-        FROM games
-        GROUP BY provider
-        ORDER BY total DESC, provider ASC
-    """)
+    cur.execute("SELECT provider, COUNT(*) AS total FROM games GROUP BY provider ORDER BY total DESC, provider ASC")
     provider_rows = cur.fetchall()
     cur.execute("SELECT * FROM games ORDER BY id DESC LIMIT 40")
     recent_games = cur.fetchall()
     cur.close()
     conn.close()
-
-    provider_table = ""
-    for row in provider_rows:
-        provider_table += f"""
-        <tr>
-            <td>{row['provider']}</td>
-            <td>{row['total']}</td>
-        </tr>
-        """
-
-    recent_table = ""
-    for row in recent_games:
-        recent_table += f"""
-        <tr>
-            <td>{row['name']}</td>
-            <td>{row['provider']}</td>
-            <td>{row['rtp'] or "Verificado ✅"}</td>
-            <td>{row['emoji']}</td>
-            <td>{row['game_type']}</td>
-        </tr>
-        """
-
+    provider_table = "".join(f'<tr><td>{row["provider"]}</td><td>{row["total"]}</td></tr>' for row in provider_rows)
+    recent_table = "".join(f'<tr><td>{row["name"]}</td><td>{row["provider"]}</td><td>{row["rtp"] or "Verificado ✅"}</td><td>{row["emoji"]}</td><td>{row["game_type"]}</td></tr>' for row in recent_games)
     html = f"""
     <div class="grid grid-2">
         <div class="card">
             <h2>Adicionar jogo manual</h2>
             <form method="post">
                 <input type="hidden" name="mode" value="single">
-
-                <label>Provedora</label>
-                <input name="provider" placeholder="Ex.: PG Soft">
-
-                <label>Nome do jogo</label>
-                <input name="name" placeholder="Ex.: Fortune Tiger">
-
-                <label>RTP (opcional)</label>
-                <input name="rtp" placeholder="Ex.: 96.81%">
-
-                <label>Emoji (opcional)</label>
-                <input name="emoji" value="🎰">
-
+                <label>Provedora</label><input name="provider" placeholder="Ex.: PG Soft">
+                <label>Nome do jogo</label><input name="name" placeholder="Ex.: Fortune Tiger">
+                <label>RTP (opcional)</label><input name="rtp" placeholder="Ex.: 96.81%">
+                <label>Emoji (opcional)</label><input name="emoji" value="🎰">
                 <button type="submit">Adicionar jogo</button>
             </form>
         </div>
-
         <div class="card">
-            <h2>Importação em massa FULL PESADO</h2>
-            <div class="small" style="margin-bottom:10px;">
-                Formato por linha: <b>Provedora | Nome do jogo | RTP opcional | Emoji opcional</b>
-            </div>
+            <h2>Importação em massa</h2>
+            <div class="small" style="margin-bottom:10px;">Formato: <b>Provedora | Nome | RTP | Emoji</b></div>
             <form method="post">
                 <input type="hidden" name="mode" value="bulk">
-                <textarea name="bulk_text" placeholder="PG Soft | Fortune Tiger | 96.81% | 🐯&#10;Pragmatic Play | Gates of Olympus | 96.50% | ⚡"></textarea>
+                <textarea name="bulk_text" placeholder="PG Soft | Fortune Tiger | 96.81% | 🐯"></textarea>
                 <button type="submit">Importar em massa</button>
             </form>
         </div>
     </div>
-
     <div class="grid grid-2" style="margin-top:18px;">
         <div class="card">
             <h2>Provedoras no catálogo</h2>
             <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Provedora</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>{provider_table}</tbody>
-                </table>
+                <table><thead><tr><th>Provedora</th><th>Total</th></tr></thead><tbody>{provider_table}</tbody></table>
             </div>
         </div>
-
         <div class="card">
             <h2>Últimos jogos cadastrados</h2>
             <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Jogo</th>
-                            <th>Provedora</th>
-                            <th>RTP</th>
-                            <th>Emoji</th>
-                            <th>Tipo</th>
-                        </tr>
-                    </thead>
-                    <tbody>{recent_table}</tbody>
-                </table>
+                <table><thead><tr><th>Jogo</th><th>Provedora</th><th>RTP</th><th>Emoji</th><th>Tipo</th></tr></thead><tbody>{recent_table}</tbody></table>
             </div>
         </div>
     </div>
@@ -2369,61 +2237,31 @@ def admin_settings():
         set_setting("theme_primary", request.form.get("theme_primary", "").strip() or "#B3001B")
         set_setting("theme_secondary", request.form.get("theme_secondary", "").strip() or "#D4AF37")
         set_setting("theme_dark", request.form.get("theme_dark", "").strip() or "#0B0B0F")
-
         interval = request.form.get("send_interval_minutes", "").strip()
         late = request.form.get("max_late_minutes", "").strip()
         start_time = request.form.get("auto_start_time", "").strip()
         end_time = request.form.get("auto_end_time", "").strip()
-
-        if interval:
-            set_setting("send_interval_minutes", interval)
-        if late:
-            set_setting("max_late_minutes", late)
-        if start_time:
-            set_setting("auto_start_time", start_time)
-        if end_time:
-            set_setting("auto_end_time", end_time)
-
+        if interval: set_setting("send_interval_minutes", interval)
+        if late: set_setting("max_late_minutes", late)
+        if start_time: set_setting("auto_start_time", start_time)
+        if end_time: set_setting("auto_end_time", end_time)
         flash("Configurações salvas.")
         return redirect(url_for("admin_settings"))
-
     html = f"""
     <div class="card">
         <h2>Configurações</h2>
         <form method="post">
-            <label>Nome da marca</label>
-            <input name="brand_name" value="{get_setting('brand_name', 'Rainha Games')}">
-
-            <label>Texto do botão</label>
-            <input name="footer_text" value="{get_setting('footer_text', DEFAULT_FOOTER_TEXT)}">
-
-            <label>Link do botão</label>
-            <input name="footer_link" value="{get_setting('footer_link', DEFAULT_FOOTER_LINK)}">
-
-            <label>URL da imagem opcional para envios</label>
-            <input name="hero_image_url" value="{get_setting('hero_image_url', '')}" placeholder="https://...">
-
-            <label>Horário inicial automático</label>
-            <input name="auto_start_time" value="{get_setting('auto_start_time', AUTO_START_TIME)}">
-
-            <label>Horário final automático</label>
-            <input name="auto_end_time" value="{get_setting('auto_end_time', AUTO_END_TIME)}">
-
-            <label>Intervalo entre envios (minutos)</label>
-            <input name="send_interval_minutes" value="{get_setting('send_interval_minutes', str(SEND_INTERVAL_MINUTES))}">
-
-            <label>Tolerância máxima de atraso (minutos)</label>
-            <input name="max_late_minutes" value="{get_setting('max_late_minutes', str(MAX_LATE_MINUTES))}">
-
-            <label>Cor principal</label>
-            <input name="theme_primary" value="{get_setting('theme_primary', '#B3001B')}">
-
-            <label>Cor secundária</label>
-            <input name="theme_secondary" value="{get_setting('theme_secondary', '#D4AF37')}">
-
-            <label>Cor escura</label>
-            <input name="theme_dark" value="{get_setting('theme_dark', '#0B0B0F')}">
-
+            <label>Nome da marca</label><input name="brand_name" value="{get_setting('brand_name', 'Rainha Games')}">
+            <label>Texto do botão</label><input name="footer_text" value="{get_setting('footer_text', DEFAULT_FOOTER_TEXT)}">
+            <label>Link do botão</label><input name="footer_link" value="{get_setting('footer_link', DEFAULT_FOOTER_LINK)}">
+            <label>URL da imagem opcional</label><input name="hero_image_url" value="{get_setting('hero_image_url', '')}" placeholder="https://...">
+            <label>Horário inicial automático</label><input name="auto_start_time" value="{get_setting('auto_start_time', AUTO_START_TIME)}">
+            <label>Horário final automático</label><input name="auto_end_time" value="{get_setting('auto_end_time', AUTO_END_TIME)}">
+            <label>Intervalo entre envios (minutos)</label><input name="send_interval_minutes" value="{get_setting('send_interval_minutes', str(SEND_INTERVAL_MINUTES))}">
+            <label>Tolerância máxima de atraso (minutos)</label><input name="max_late_minutes" value="{get_setting('max_late_minutes', str(MAX_LATE_MINUTES))}">
+            <label>Cor principal</label><input name="theme_primary" value="{get_setting('theme_primary', '#B3001B')}">
+            <label>Cor secundária</label><input name="theme_secondary" value="{get_setting('theme_secondary', '#D4AF37')}">
+            <label>Cor escura</label><input name="theme_dark" value="{get_setting('theme_dark', '#0B0B0F')}">
             <button type="submit">Salvar configurações</button>
         </form>
     </div>
@@ -2435,41 +2273,23 @@ def admin_settings():
 @require_admin
 def admin_test_send():
     ensure_daily_plan(today_str())
-
     conn = db()
     cur = conn.cursor()
     cur.execute("""
         SELECT dp.*, g.name AS game_name, g.provider, g.rtp, g.emoji, g.game_type
-        FROM daily_plan dp
-        JOIN games g ON g.id = dp.game_id
+        FROM daily_plan dp JOIN games g ON g.id = dp.game_id
         WHERE dp.plan_date = %s AND dp.sent = 0
-        ORDER BY dp.position ASC
-        LIMIT 1
+        ORDER BY dp.position ASC LIMIT 1
     """, (today_str(),))
     next_item = cur.fetchone()
     cur.close()
     conn.close()
-
     if not next_item:
         flash("Não há item pendente para teste hoje.")
         return redirect(url_for("dashboard"))
-
-    msg = build_message_for_game(
-        plan_date=next_item["plan_date"],
-        position=next_item["position"],
-        game_row={
-            "id": next_item["game_id"],
-            "name": next_item["game_name"],
-            "provider": next_item["provider"],
-            "rtp": next_item["rtp"],
-            "emoji": next_item["emoji"],
-            "game_type": next_item["game_type"],
-        }
-    )
-
+    msg = build_message_for_game(plan_date=next_item["plan_date"], position=next_item["position"], game_row={"id": next_item["game_id"], "name": next_item["game_name"], "provider": next_item["provider"], "rtp": next_item["rtp"], "emoji": next_item["emoji"], "game_type": next_item["game_type"]})
     hero_image_url = get_setting("hero_image_url", "").strip()
     ok, response = telegram_send(msg, hero_image_url)
-
     flash("Teste enviado com sucesso." if ok else f"Falha no teste: {response}")
     return redirect(url_for("dashboard"))
 
@@ -2483,20 +2303,16 @@ def admin_rebuild_plan():
     conn.commit()
     cur.close()
     conn.close()
-
     ensure_daily_plan(today_str())
     flash("Agenda automática de hoje foi regerada.")
     return redirect(url_for("dashboard"))
 
-# =========================================================
-# API — DASHBOARD STATS (usado pelo auto-refresh AJAX)
-# =========================================================
+
 @app.route("/api/dashboard-stats")
 @require_login
 def api_dashboard_stats():
     from flask import jsonify
     ensure_daily_plan(today_str())
-
     conn = db()
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) AS total FROM games")
@@ -2515,60 +2331,22 @@ def api_dashboard_stats():
     last_log = cur.fetchone()
     cur.execute("""
         SELECT dp.*, g.name AS game_name, g.provider, g.rtp, g.emoji, g.game_type
-        FROM daily_plan dp
-        JOIN games g ON g.id = dp.game_id
+        FROM daily_plan dp JOIN games g ON g.id = dp.game_id
         WHERE dp.plan_date = %s AND dp.sent = 0
-        ORDER BY dp.position ASC
-        LIMIT 1
+        ORDER BY dp.position ASC LIMIT 1
     """, (today_str(),))
     next_item = cur.fetchone()
     cur.execute("SELECT * FROM sent_log ORDER BY id DESC LIMIT 12")
     recent_logs = cur.fetchall()
     cur.close()
     conn.close()
-
     preview = "Nenhuma prévia disponível."
     if next_item:
-        preview = build_message_for_game(
-            plan_date=next_item["plan_date"],
-            position=next_item["position"],
-            game_row={
-                "id": next_item["game_id"],
-                "name": next_item["game_name"],
-                "provider": next_item["provider"],
-                "rtp": next_item["rtp"],
-                "emoji": next_item["emoji"],
-                "game_type": next_item["game_type"],
-            }
-        )
-
+        preview = build_message_for_game(plan_date=next_item["plan_date"], position=next_item["position"], game_row={"id": next_item["game_id"], "name": next_item["game_name"], "provider": next_item["provider"], "rtp": next_item["rtp"], "emoji": next_item["emoji"], "game_type": next_item["game_type"]})
     first_time_text = datetime.strptime(first_time["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M") if first_time else "-"
     last_time_text = datetime.strptime(last_time["send_at"], "%Y-%m-%d %H:%M:%S").strftime("%H:%M") if last_time else "-"
-
-    logs_data = []
-    for row in recent_logs:
-        logs_data.append({
-            "date": row["send_date"],
-            "time": row["send_time"],
-            "game": row["game_name"] or "-",
-            "provider": row["provider"] or "-",
-            "status": row["telegram_status"] or "-",
-        })
-
-    return jsonify({
-        "total_games": total_games,
-        "total_providers": total_providers,
-        "sent_today": sent_today,
-        "pending_today": pending_today,
-        "hora_atual": now_br().strftime("%H:%M:%S"),
-        "first_time": first_time_text,
-        "last_time": last_time_text,
-        "last_game": last_log["game_name"] if last_log else "Ainda não houve envio",
-        "last_send_time": last_log["send_time"] if last_log else "-",
-        "last_status": last_log["telegram_status"] if last_log else "-",
-        "preview": preview,
-        "logs": logs_data,
-    })
+    logs_data = [{"date": row["send_date"], "time": row["send_time"], "game": row["game_name"] or "-", "provider": row["provider"] or "-", "status": row["telegram_status"] or "-"} for row in recent_logs]
+    return jsonify({"total_games": total_games, "total_providers": total_providers, "sent_today": sent_today, "pending_today": pending_today, "hora_atual": now_br().strftime("%H:%M:%S"), "first_time": first_time_text, "last_time": last_time_text, "last_game": last_log["game_name"] if last_log else "Ainda não houve envio", "last_send_time": last_log["send_time"] if last_log else "-", "last_status": last_log["telegram_status"] if last_log else "-", "preview": preview, "logs": logs_data})
 
 
 # =========================================================
