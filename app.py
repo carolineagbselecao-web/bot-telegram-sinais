@@ -1059,11 +1059,55 @@ PROVIDER_GAMES = {
         ("Cash Wheel", "", "💵"),
     ],
     "Playtech": [
+        ("Adventure Trail Fireblaze Jackpots", "", "🏆"),
+        ("Alohawaii Cash Collect", "", "🌺"),
+        ("Amazing Factory Fire Blaze Golden", "", "🏭"),
+        ("Azteca Bonus Lines", "", "🏺"),
+        ("Azteca Cash Collect", "", "🏺"),
+        ("Blue Wizard Fireblaze", "", "🧙"),
+        ("Blue Wizard Megaways Fire Blaze Classics", "", "🧙"),
         ("Buffalo Blitz", "", "🦬"),
-        ("Age of the Gods", "", "⚡"),
-        ("Gladiator Jackpot", "", "🛡️"),
-        ("Blue Wizard", "", "🧙"),
-        ("Great Blue", "", "🦈"),
+        ("Buffalo Blitz 2", "", "🦬"),
+        ("Cash Collect Silver Bullet Bandit", "", "🤠"),
+        ("Classic Roulette", "", "🎡"),
+        ("Diamond Bet Roulette", "", "🎡"),
+        ("Diamond Rise", "", "💎"),
+        ("Double Digger", "", "⛏️"),
+        ("Dragon Bonanza Gold Hit", "", "🐉"),
+        ("Eternal Lady Fireblaze", "", "👸"),
+        ("God of Storms 2 Age of the Gods", "", "⚡"),
+        ("Gold Hit Lil Demon", "", "😈"),
+        ("Gold Trio", "", "💰"),
+        ("Halloween Fortune", "", "🎃"),
+        ("Hit Bar", "", "🍺"),
+        ("Hit Bar Gold", "", "🍺"),
+        ("Jackpots Legacy of the Tiger Mega Fire Blaze", "", "🐯"),
+        ("Jinns Moon Fire Blaze", "", "🧞"),
+        ("Joker Rush Cash Collect", "", "🃏"),
+        ("JP Bacon & Co. Gold Hit & Link", "", "🐷"),
+        ("Khonsu God of Moon Mega Fire Blaze", "", "🌙"),
+        ("King Blitz", "", "🦁"),
+        ("Leprechaun's Luck Cash Collect Megaways", "", "🍀"),
+        ("Leprechauns Luck Cash Collect", "", "🍀"),
+        ("Macaque Fireblaze Golden", "", "🐒"),
+        ("Mega Cash Collect Queen of the Pyramids", "", "🏺"),
+        ("Mega Fire Blaze Big Circus", "", "🎪"),
+        ("Penny Roulette", "", "🎡"),
+        ("Pharaoh's Daughter Fireblaze", "", "🏺"),
+        ("Premium Blackjack", "", "🃏"),
+        ("Pyramid Linx", "", "👁️"),
+        ("Quantum BJ Plus Instant Play", "", "🃏"),
+        ("Red Wizard Fire Blaze Jackpot", "", "🧙"),
+        ("Sahara Riches Cash Collect", "", "🏜️"),
+        ("Sahara Riches Megaways Cash Collect", "", "🏜️"),
+        ("Silent Samurai Mega Cash Collect", "", "⚔️"),
+        ("Sky Queen Fireblaze", "", "👸"),
+        ("Spin 'Em Round!", "", "🎡"),
+        ("Tsai Shen's Gift Fireblaze", "", "💰"),
+        ("Tundra Wolf Fire Blaze Golden", "", "🐺"),
+        ("Wheels of Olympus Age of the Gods", "", "⚡"),
+        ("Wild Pistolero Mega Fireblaze", "", "🤠"),
+        ("Witches Cash Collect", "", "🧙"),
     ],
     "Belatra": [
         ("Mummyland Treasures", "", "🏺"),
@@ -1543,11 +1587,16 @@ def build_message_for_game(plan_date: str, position: int, game_row):
     provider_line = f"🏢 Provedora: {game_row['provider']}\n" if game_row["provider"] else ""
     rtp_line = f"📊 RTP: {game_row['rtp']}\n" if game_row["rtp"] else "📊 RTP: Verificado ✅\n"
 
+    # Sinalização especial Megaways
+    is_megaways = "megaways" in game_row["name"].lower()
+    megaways_line = "⚡ Mecânica: MEGAWAYS — rolos expansíveis, alta volatilidade!\n" if is_megaways else ""
+
     return (
         f"{intro}\n\n"
         f"🎮 Jogo: {game_row['name']} {game_row['emoji']}\n"
         f"{provider_line}"
-        f"{rtp_line}\n"
+        f"{rtp_line}"
+        f"{megaways_line}\n"
         f"{strategy_text}\n\n"
         f"{closing}"
     )
