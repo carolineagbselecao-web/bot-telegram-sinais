@@ -39,7 +39,7 @@ SCHEDULER_LEASE_SECONDS = 45
 SCHEDULER_INSTANCE_ID = f"{os.getenv('RENDER_INSTANCE_ID') or os.getenv('HOSTNAME') or 'local'}:{os.getpid()}"
 
 DEFAULT_FOOTER_LINK = "https://beacons.ai/rainhagames"
-DEFAULT_FOOTER_TEXT = "👑 A RAINHA JOGA AQUI"
+DEFAULT_FOOTER_TEXT = "Jogue Aqui"
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
